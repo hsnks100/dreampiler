@@ -39,9 +39,24 @@ extern KParser kparser;
 int main(int argc, char **argv) {
     std::istringstream is(R"(
     {
+        
         a = 0;
         a = 0;
         a = 0;
+        if a == 2 {
+            while a == 3 {
+                a = 100;
+                a = 100;
+                a = 100;
+            }
+            while a == 4 {
+            }
+        }
+
+        if a == 3 {
+            a = 100;
+        }
+    }
     
     )");
 

@@ -22,29 +22,8 @@
 #undef YY_DECL
 #define YY_DECL int Scanner::get_next_token()
 
-// #include "__parser.hpp" // this is needed for symbol_type
 
-// namespace EzAquarii {
-//
-// // Forward declare interpreter to avoid include. Header is added inimplementation file.
-// class Interpreter; 
-//     
-// class Scanner : public yyFlexLexer {
-// public:
-//         Scanner(Interpreter &driver) : m_driver(driver) {}
-// 	virtual ~Scanner() {}
-// 	virtual EzAquarii::Parser::symbol_type get_next_token();
-//         
-// private:
-//     Interpreter &m_driver;
-// };
-//
-//
-//
-// }
-
-#include <string>
-
+#include <string> 
 class Scanner : public yyFlexLexer {
     public:
         Scanner(std::istream *in) : yyFlexLexer(in) {} 

@@ -14,57 +14,58 @@ KParser kparser;
 %option noyywrap
 %option c++
 %option yyclass="Scanner"
+%option yylineno
 
 %%
 
 if {
-    kparser.m_tokens.emplace_back(yytext, TokenType::_if);
+    kparser.m_tokens.emplace_back(yytext, TokenType::_if, yylineno);
     cout << "Scanner: if [" << yytext << "]" << endl;
     return 12;
 } 
 
 while {
-    kparser.m_tokens.emplace_back(yytext, TokenType::_while);
+    kparser.m_tokens.emplace_back(yytext, TokenType::_while, yylineno);
     cout << "Scanner: while [" << yytext << "]" << endl;
     return 12;
 } 
 [a-z][a-z0-9]* { 
-    kparser.m_tokens.emplace_back(yytext, TokenType::id);
+    kparser.m_tokens.emplace_back(yytext, TokenType::id, yylineno);
     cout << "Scanner: identifier [" << yytext << "]" << endl;
     return 11;
 } 
 
 [0-9][0-9]* {
     cout << "Scanner: number [" << yytext << "]" << endl;
-    kparser.m_tokens.emplace_back(yytext, TokenType::integer);
+    kparser.m_tokens.emplace_back(yytext, TokenType::integer, yylineno);
     return 12;
     // cout << "Scanner: decimal number: " << yytext << endl;
     // uint64_t number = strtoull(yytext, 0, 10);
 }
 
 = {
-    cout << "Scanner: assign [" << yytext << "]" << endl;
-    kparser.m_tokens.emplace_back(yytext, TokenType::assign);
+    cout << "Scanner: assign [" << yytext << "]" << yylineno <<  endl;
+    kparser.m_tokens.emplace_back(yytext, TokenType::assign, yylineno);
     return 12;
 }
 
 \{ { 
-    kparser.m_tokens.emplace_back(yytext, TokenType::lbracket);
+    kparser.m_tokens.emplace_back(yytext, TokenType::lbracket, yylineno);
     return 13;
 }
 
 \} { 
-    kparser.m_tokens.emplace_back(yytext, TokenType::rbracket);
+    kparser.m_tokens.emplace_back(yytext, TokenType::rbracket, yylineno);
     return 13;
 }
 ; {
-    kparser.m_tokens.emplace_back(yytext, TokenType::semicolon);
+    kparser.m_tokens.emplace_back(yytext, TokenType::semicolon, yylineno);
     return 12;
 }
 
 == {
     cout << "Scanner: equal [" << yytext << "]" << endl;
-    kparser.m_tokens.emplace_back(yytext, TokenType::equal);
+    kparser.m_tokens.emplace_back(yytext, TokenType::equal, yylineno);
     return 12;
 }
 
@@ -83,6 +84,7 @@ while {
 }
 
 <<EOF>> { 
+    kparser.m_tokens.emplace_back(yytext, TokenType::eof, yylineno);
     return yyterminate(); 
 }
 
