@@ -29,6 +29,19 @@ while {
     cout << "Scanner: while [" << yytext << "]" << endl;
     return 12;
 } 
+
+break {
+    kparser.m_tokens.emplace_back(yytext, TokenType::_break, yylineno);
+    cout << "Scanner: while [" << yytext << "]" << endl;
+    return 12;
+}
+
+continue {
+    kparser.m_tokens.emplace_back(yytext, TokenType::_continue, yylineno);
+    cout << "Scanner: while [" << yytext << "]" << endl;
+    return 12;
+}
+
 [a-z][a-z0-9]* { 
     kparser.m_tokens.emplace_back(yytext, TokenType::id, yylineno);
     cout << "Scanner: identifier [" << yytext << "]" << endl;
@@ -44,11 +57,26 @@ while {
 }
 
 = {
-    cout << "Scanner: assign [" << yytext << "]" << yylineno <<  endl;
     kparser.m_tokens.emplace_back(yytext, TokenType::assign, yylineno);
     return 12;
 }
 
+\+ {
+    kparser.m_tokens.emplace_back(yytext, TokenType::plus, yylineno);
+    return 12;
+}
+- {
+    kparser.m_tokens.emplace_back(yytext, TokenType::minus, yylineno);
+    return 12;
+}
+\* {
+    kparser.m_tokens.emplace_back(yytext, TokenType::mult, yylineno);
+    return 12;
+}
+\/ {
+    kparser.m_tokens.emplace_back(yytext, TokenType::devide, yylineno);
+    return 12;
+}
 \{ { 
     kparser.m_tokens.emplace_back(yytext, TokenType::lbracket, yylineno);
     return 13;

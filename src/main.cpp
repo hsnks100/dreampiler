@@ -26,53 +26,46 @@
  * 
  */
 
-#include "command.h"
-
 #include <iostream>
 #include <sstream>
+#include "scanner.h"
+#include "kparser.h"
 
-using namespace EzAquarii;
-using std::cout;
-using std::endl;
+using namespace std;
 
-Command::Command(const std::string &name, const std::vector<uint64_t> arguments) :
-    m_name(name),
-    m_args(arguments)
-{
-}
 
-Command::Command(const std::string &name) :
-    m_name(name),
-    m_args()
-{
-}
+extern KParser kparser;
 
-Command::Command() :
-    m_name(),
-    m_args()
-{
-}
-
-Command::~Command()
-{
-}
-    
-std::string Command::str() const {
-    std::stringstream ts;
-    ts << "name = [" << m_name << "], ";
-    ts << "arguments = [";
-    
-    for(int i = 0; i < m_args.size(); i++) {
-        ts << m_args[i];
-        if(i < m_args.size() - 1) {
-            ts << ", ";
+int main(int argc, char **argv) {
+    std::istringstream is(R"(
+    { 
+        a = 5 - 3 - 2;
+        b = 7;
+        while a == 3 {
+            if b == 100 {
+                break;
+            }
+            a = 2;
         }
+        a = 777777; 
+    } 
+    )"); 
+    Scanner m_scanner(&is);
+    while(m_scanner.get_next_token()) {
     }
-    
-    ts << "]";
-    return ts.str();
-}
 
-std::string Command::name() const {
-    return m_name;
+    // std::string seper = "";
+    // for(auto& i: kparser.m_tokens) {
+    //     // std::cout << seper << i.str << "(" << int(i.tokenType) << ")";
+    //     std::cout << seper << i.str;
+    //     seper = " ";
+    // } 
+
+    std::cout << is.str() << std::endl;
+    kparser.parse();
+    // cout << m_scanner.get_next_token() << endl;
+    // cout << m_scanner.get_next_token() << endl;
+    // cout << m_scanner.get_next_token() << endl;
+    // cout << m_scanner.get_next_token() << endl;
+    return 0;
 }
