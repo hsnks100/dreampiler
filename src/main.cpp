@@ -33,7 +33,6 @@
 
 using namespace std;
 
-
 extern KParser kparser;
 
 int main(int argc, char **argv) {

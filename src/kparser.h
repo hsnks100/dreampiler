@@ -20,11 +20,13 @@ enum class TokenType {
     minus,
     mult,
     devide,
-    eof,
+    lparen,
+    rparen,
     _if,
     _while,
     _break,
-    _continue
+    _continue,
+    eof
 };
 struct Token {
     std::string str;
@@ -63,6 +65,7 @@ class KParser {
         std::vector<std::pair<int, std::string>> m_tree;
         std::vector<Token> m_tokens;
         std::vector<std::string> m_il;
+        std::vector<std::string> m_errorMsgs;
         void parse() ;
         int _statement(int begin, int end, const BlockInfo& bi);
 
