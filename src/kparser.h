@@ -12,7 +12,10 @@ enum class TokenType {
     lbracket,
     rbracket,
     semicolon,
+    logical_or,
+    logical_and,
     equal,
+    not_equal,
     plus,
     minus,
     mult,
@@ -62,12 +65,25 @@ class KParser {
         std::vector<std::string> m_il;
         void parse() ;
         int _statement(int begin, int end, const BlockInfo& bi);
+
         int _expr(int begin, int end, const BlockInfo& bi);
-        int _simple_expr(int begin, int end, const BlockInfo& bi);
-        int _term(int begin, int end, const BlockInfo& bi);
-        int _factor(int begin, int end, const BlockInfo& bi);
-        int _equal(int begin, int end, const BlockInfo& bi);
-        int _binary_operator(int beign, int end, const BlockInfo& bi);
+        int _adv_expr(int begin, int end, const BlockInfo& bi);
+        int _or_expr(int begin, int end, const BlockInfo& bi);
+        int _and_expr(int begin, int end, const BlockInfo& bi);
+        int _cmp_expr(int begin, int end, const BlockInfo& bi);
+        int _add_expr(int begin, int end, const BlockInfo& bi);
+        int _mul_expr(int begin, int end, const BlockInfo& bi);
+        int _mul_op(int begin, int end, const BlockInfo& bi);
+        int _sign_expr(int begin, int end, const BlockInfo& bi);
+        int _factor_expr(int begin, int end, const BlockInfo& bi);
+
+
+
+            int _simple_expr(int begin, int end, const BlockInfo& bi);
+            int _term(int begin, int end, const BlockInfo& bi);
+            int _factor(int begin, int end, const BlockInfo& bi);
+            int _equal(int begin, int end, const BlockInfo& bi);
+            int _binary_operator(int beign, int end, const BlockInfo& bi);
 
         int _if(int begin, int end, const BlockInfo& bi);
         int _block(int begin, int end, const BlockInfo& bi);

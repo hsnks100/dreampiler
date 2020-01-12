@@ -5,7 +5,7 @@ find_package(FLEX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
 # bison_target(Parser parse.yy ${CMAKE_CURRENT_BINARY_DIR}/parser.cc)
-flex_target(Scanner scanner.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.cc)
+flex_target(Scanner src/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.cc)
 # set(CMAKE_CXX_COMPILER /usr/bin/g++)
 
 

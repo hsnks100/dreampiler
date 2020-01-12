@@ -91,8 +91,22 @@ continue {
     return 12;
 }
 
+\|\| {
+    kparser.m_tokens.emplace_back(yytext, TokenType::logical_or, yylineno);
+    return 12;
+}
+
+&& {
+    kparser.m_tokens.emplace_back(yytext, TokenType::logical_and, yylineno);
+    return 12;
+}
+
+!= {
+    kparser.m_tokens.emplace_back(yytext, TokenType::not_equal, yylineno);
+    return 12;
+}
+
 == {
-    cout << "Scanner: equal [" << yytext << "]" << endl;
     kparser.m_tokens.emplace_back(yytext, TokenType::equal, yylineno);
     return 12;
 }

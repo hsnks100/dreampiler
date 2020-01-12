@@ -35,29 +35,231 @@ int KParser::_statement(int begin, int end, const BlockInfo& bi) {
 }
 
 int KParser::_expr(int begin, int end, const BlockInfo& bi) {
+    return _adv_expr(begin, end, bi);
+    // int i = begin;
+    // int t;
+    // t = _simple_expr(i, end, bi);
+    // if (t < 0) {
+    //     return -1;
+    // }
+    // i = t;
+    // while (1) {
+    //     int tryI = i;
+    //     TokenType tokenType = m_tokens[tryI].tokenType;
+    //     if(tokenType != TokenType::equal) {
+    //         break; 
+    //     }
+    //     tryI++;
+    //     t = _simple_expr(tryI, end, bi);
+    //     if (t < 0) {
+    //         break;
+    //     }
+    //     m_il.push_back("call eq ");
+    //     i = t; 
+    // } 
+    // return i;
+}
+
+int KParser::_adv_expr(int begin, int end, const BlockInfo& bi) {
+    return _or_expr(begin, end, bi);
+}
+int KParser::_or_expr(int begin, int end, const BlockInfo& bi) {
     int i = begin;
     int t;
-    t = _simple_expr(i, end, bi);
+    std::string leftValue = m_tokens[i].str;
+    t = _and_expr(i, end, bi);
     if (t < 0) {
         return -1;
     }
     i = t;
     while (1) {
         int tryI = i;
-        TokenType tokenType = m_tokens[tryI].tokenType;
-        if(tokenType != TokenType::equal) {
-            break; 
+        std::string rightValue = m_tokens[tryI].str;
+        TokenType tokenValue = m_tokens[tryI].tokenType;
+        if(tokenValue != TokenType::logical_or) {
+            break;
         }
         tryI++;
-        t = _simple_expr(tryI, end, bi);
+        t = _and_expr(tryI, end, bi);
         if (t < 0) {
             break;
         }
-        m_il.push_back("call eq ");
+    // printf("rrrrrrrrrrqweqwe\n");
+    // exit(-1);
+        // m_il.push_back(leftValue);
+        // m_il.push_back(rightValue);
+        m_il.push_back("call ||");
         i = t; 
     } 
     return i;
 }
+int KParser::_and_expr(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t;
+    std::string leftValue = m_tokens[i].str;
+    t = _cmp_expr(i, end, bi);
+    if (t < 0) {
+        return -1;
+    }
+    i = t;
+    while (1) {
+        int tryI = i;
+        std::string rightValue = m_tokens[tryI].str;
+        TokenType tokenValue = m_tokens[tryI].tokenType;
+        if(tokenValue != TokenType::logical_and) {
+            break;
+        }
+        tryI++;
+        t = _cmp_expr(tryI, end, bi);
+        if (t < 0) {
+            break;
+        }
+        // m_il.push_back(leftValue);
+        // m_il.push_back(rightValue);
+        m_il.push_back("call &&");
+        i = t; 
+    } 
+    return i;
+}
+int KParser::_cmp_expr(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t;
+    std::string leftValue = m_tokens[i].str;
+    t = _add_expr(i, end, bi);
+    if (t < 0) {
+        return -1;
+    }
+    i = t;
+
+    do {
+        int tryI = i;
+        auto tokenValue = m_tokens[tryI].tokenType;
+        if(tokenValue != TokenType::equal && tokenValue != TokenType::not_equal) {
+            break;
+        }
+        tryI++;
+        std::string rightValue = m_tokens[tryI].str;
+        t = _add_expr(tryI, end, bi);
+        if (t < 0) {
+            break;
+        }
+        // m_il.push_back(leftValue);
+        // m_il.push_back(rightValue);
+        if(tokenValue == TokenType::equal) {
+            m_il.push_back("call ==");
+        } else if(tokenValue == TokenType::not_equal) {
+            m_il.push_back("call !=");
+        }
+        i = t; 
+    } while(0);
+    return i;
+}
+int KParser::_add_expr(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t;
+    std::string leftValue = m_tokens[i].str;
+    t = _mul_expr(i, end, bi);
+    if (t < 0) {
+        return -1;
+    }
+    i = t;
+    while (1) {
+        int tryI = i;
+        auto tokenValue = m_tokens[tryI].tokenType;
+        if(tokenValue != TokenType::plus && tokenValue != TokenType::minus) {
+            break;
+        }
+        tryI++;
+        std::string rightValue = m_tokens[tryI].str;
+        t = _mul_expr(tryI, end, bi);
+        if (t < 0) {
+            break;
+        }
+        // m_il.push_back(leftValue);
+        // m_il.push_back(rightValue);
+        if(tokenValue == TokenType::plus) {
+            m_il.push_back("call +");
+        } else if(tokenValue == TokenType::minus) {
+            m_il.push_back("call -");
+        }
+        i = t; 
+    } 
+    return i;
+}
+int KParser::_mul_expr(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t;
+    std::string leftValue = m_tokens[i].str;
+    t = _sign_expr(i, end, bi);
+    if (t < 0) {
+        return -1;
+    }
+    i = t;
+    while (1) {
+        int tryI = i;
+        auto tokenValue = m_tokens[tryI].tokenType;
+        t = _mul_op(tryI, end, bi);
+        if(t < 0) {
+            break;
+        }
+        tryI++;
+        std::string rightValue = m_tokens[tryI].str;
+        t = _sign_expr(tryI, end, bi);
+        if (t < 0) {
+            break;
+        }
+        // m_il.push_back(leftValue);
+        // m_il.push_back(rightValue);
+        if(tokenValue == TokenType::mult) {
+            m_il.push_back("call *");
+        } else if(tokenValue == TokenType::devide) {
+            m_il.push_back("call /");
+        }
+        i = t; 
+    } 
+    return i;
+}
+
+int KParser::_mul_op(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    if (m_tokens[i].tokenType != TokenType::mult && m_tokens[i].tokenType != TokenType::devide) {
+        return -1;
+    }
+    i++;
+    return i;
+}
+int KParser::_sign_expr(int begin, int end, const BlockInfo& bi) {
+    int t;
+    int i = begin;
+    // if(m_tokens[i].tokenType == TokenType::plus || m_tokens[i].tokenType == TokenType::minus) {
+    if(m_tokens[i].tokenType == TokenType::minus) {
+        i++;
+    }
+    
+    t = _factor_expr(i, end, bi);
+    if(t < 0) {
+        return -1;
+    }
+    i = t;
+    return i;
+}
+int KParser::_factor_expr(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    TokenType tokenType = m_tokens[i].tokenType;
+    if(tokenType == TokenType::id) {
+        m_il.push_back("push " + m_tokens[i].str);
+        i++;
+    } else if(tokenType == TokenType::integer) {
+        m_il.push_back("push " + m_tokens[i].str);
+        i++;
+    } else {
+        return -1;
+    }
+
+    return i;
+}
+
+
 int KParser::_simple_expr(int begin, int end, const BlockInfo& bi) {
     int i = begin;
     int t;

@@ -39,10 +39,10 @@ extern KParser kparser;
 int main(int argc, char **argv) {
     std::istringstream is(R"(
     { 
-        a = 5 - 3 - 2;
+        a = 5 - 3 - 2 * 3 + 110 / 3 * 4;
         b = 7;
-        while a == 3 {
-            if b == 100 {
+        while a == 3 + 1 || a == 5 + 2 * 3 && a == 10 / 3 + 1 {
+            if b != 100 {
                 break;
             }
             a = 2;
