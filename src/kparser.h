@@ -6,6 +6,8 @@
 
 enum class TokenType {
     none,
+    _var,
+    _func,
     integer,
     id,
     assign,
@@ -22,6 +24,7 @@ enum class TokenType {
     devide,
     lparen,
     rparen,
+    comma,
     _if,
     _while,
     _break,
@@ -67,8 +70,15 @@ class KParser {
         std::vector<std::string> m_il;
         std::vector<std::string> m_errorMsgs;
         void parse() ;
+        int _root(int begin, int end, const BlockInfo& bi); 
+        int _external(int begin, int end, const BlockInfo& bi); 
+        int _func(int begin, int end, const BlockInfo& bi); 
+        int _parameters(int begin, int end, const BlockInfo& bi); 
+        int _var(int begin, int end, const BlockInfo& bi); 
         int _statement(int begin, int end, const BlockInfo& bi);
 
+        int _call(int begin, int end, const BlockInfo& bi); 
+        int _assign(int begin, int end, const BlockInfo& bi);
         int _expr(int begin, int end, const BlockInfo& bi);
         int _adv_expr(int begin, int end, const BlockInfo& bi);
         int _or_expr(int begin, int end, const BlockInfo& bi);
@@ -92,5 +102,4 @@ class KParser {
         int _block(int begin, int end, const BlockInfo& bi);
         int _while(int begin, int end, const BlockInfo& bi);
         int _break(int begin, int end, const BlockInfo& bi);
-        int _assign(int begin, int end, const BlockInfo& bi);
 };

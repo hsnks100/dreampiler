@@ -18,6 +18,20 @@ KParser kparser;
 
 %%
 
+
+
+var {
+    kparser.m_tokens.emplace_back(yytext, TokenType::_var, yylineno);
+}
+
+func {
+    kparser.m_tokens.emplace_back(yytext, TokenType::_func, yylineno);
+}
+
+, {
+    kparser.m_tokens.emplace_back(yytext, TokenType::comma, yylineno);
+}
+
 if {
     kparser.m_tokens.emplace_back(yytext, TokenType::_if, yylineno);
     return 12;

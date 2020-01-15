@@ -37,17 +37,20 @@ extern KParser kparser;
 
 int main(int argc, char **argv) {
     std::istringstream is(R"(
-    { 
-        a = 5 - 3 - 2 * 3 + 110 / 3 * 4;
-        b = 7;
-        while a == 3 + 1 || a == 5 + 2 * 3 && a == 10 / 3 + 1 {
-            if b != 100 {
-                break;
-            }
-            a = 2;
-        }
-        a = 777777; 
-    } 
+    var ab ;
+    func main() {
+        ab = 1 * 2 + 3 / 1 + 33 + 100;
+    }
+    func sub1(a, b, c) {
+        ab = a + b + c;
+    }
+    func sub2(a) {
+        sub1(2, 3, 4);
+        ab = a;
+    }
+    func sub3() {
+        ab = 3;
+    }
     )"); 
     Scanner m_scanner(&is);
     while(m_scanner.get_next_token()) {
@@ -60,7 +63,14 @@ int main(int argc, char **argv) {
     //     seper = " ";
     // } 
 
-    std::cout << is.str() << std::endl;
+    std::istringstream whole;
+    whole.str(is.str());
+    std::string line;
+    int l = 1;
+    while (std::getline(whole, line)) {
+        std::cout << "[" << l << "]" << line << std::endl;
+        l++;
+    }
     kparser.parse();
     // cout << m_scanner.get_next_token() << endl;
     // cout << m_scanner.get_next_token() << endl;

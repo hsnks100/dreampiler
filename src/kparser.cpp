@@ -3,7 +3,7 @@
 void KParser::parse() {
     printf("tokens size() = %d\n", m_tokens.size());
     BlockInfo bi("", "", 0);
-    _block(0, m_tokens.size(), bi);
+    _root(0, m_tokens.size(), bi);
 
 
     for(auto i=m_errorMsgs.rbegin(); i != m_errorMsgs.rend(); i++) {
@@ -17,6 +17,154 @@ void KParser::parse() {
 
 }
 
+int KParser::_root(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t = 0;
+
+    while (i < end) {
+        t = _external(i, end, bi);
+        i = t;
+        if (t < 0) {
+            break;
+        }
+        i = t;
+    }
+    return i; 
+}
+int KParser::_external(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t = 0;
+
+    if (m_tokens[i].tokenType == TokenType::eof) {
+        i++;
+        return i;
+    }
+
+    t = _func(i, end, bi); 
+    if (t >= 0) {
+        return t;
+    }
+
+    t = _var(i, end, bi); 
+    if (t >= 0) {
+        return t;
+    }
+    char buf[256];
+    sprintf(buf, "line[%d]: 함수 선언이나 변수 선언이 와야 합니다.\n", m_tokens[i].line);
+    m_errorMsgs.push_back(buf);
+    return -1;
+}
+int KParser::_func(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t = 0;
+
+    if (m_tokens[i].tokenType != TokenType::_func) {
+        return -1;
+    }
+    i++;
+
+    if (m_tokens[i].tokenType != TokenType::id) {
+        return -1;
+    }
+    m_il.push_back("func " + m_tokens[i].str);
+    i++;
+
+    t = _parameters(i, end, bi);
+    if (t < 0) {
+        char buf[256];
+        sprintf(buf, "line[%d]: 함수 인자 정의가 잘못됐습니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i = t;
+
+    t = _block(i, end, bi);
+    if (t < 0) {
+        char buf[256];
+        sprintf(buf, "line[%d]: 함수 몸체 정의가 잘못됐습니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i = t;
+    m_il.push_back("end func");
+    return i;
+}
+int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t = 0;
+    if (m_tokens[i].tokenType != TokenType::lparen) {
+        char buf[256];
+        sprintf(buf, "line[%d]: ( 가 빠졌습니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i++;
+
+    if (m_tokens[i].tokenType == TokenType::rparen) {
+        i++;
+        return i;
+    }
+    // 이 까지 왔으면 매개변수가 하나이상 있는 것이다.
+    if (m_tokens[i].tokenType != TokenType::id) {
+        char buf[256];
+        sprintf(buf, "line[%d]: 함수 인자에는 식별자가 와야합니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i++;
+
+    while (1) {
+        int tryI = i;
+        std::string rightValue = m_tokens[tryI].str;
+        TokenType tokenValue = m_tokens[tryI].tokenType;
+        if(tokenValue != TokenType::comma) {
+            break;
+        }
+        tryI++;
+        if (m_tokens[tryI].tokenType != TokenType::id) {
+            char buf[256];
+            sprintf(buf, "line[%d]: , 뒤에 식별자를 기대했습니다.\n", m_tokens[i].line);
+            m_errorMsgs.push_back(buf);
+            return -1; 
+        }
+        tryI++;
+        i = tryI;
+    } 
+    if (m_tokens[i].tokenType != TokenType::rparen) {
+        char buf[256];
+        sprintf(buf, "line[%d]: ) 가 빠졌습니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i++;
+    return i;
+}
+int KParser::_var(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t = 0;
+
+    if (m_tokens[i].tokenType != TokenType::_var) {
+        return -1;
+    }
+    i++;
+
+    if (m_tokens[i].tokenType != TokenType::id) {
+        char buf[256];
+        sprintf(buf, "line[%d]: 식별자가 빠졌습니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i++;
+
+    if (m_tokens[i].tokenType != TokenType::semicolon) {
+        char buf[256];
+        sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line);
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i++;
+    return i;
+}
 int KParser::_statement(int begin, int end, const BlockInfo& bi) {
     // sleep(1);
     int i = begin;
@@ -31,12 +179,81 @@ int KParser::_statement(int begin, int end, const BlockInfo& bi) {
         i = t;
     } else if((t = _break(i, end, bi)) >= 0) {
         i = t;
-    } 
-
+    } else if((t = _call(i, end, bi)) >= 0) {
+        i = t;
+    }
     else {
         return -1;
     }
     return i;
+}
+
+int KParser::_call(int begin, int end, const BlockInfo& bi) {
+    // some();
+    // some(a);
+    // some(a,b,c);
+    int i = begin;
+    int t = 0;
+
+    if (m_tokens[i].tokenType == TokenType::id && 
+        m_tokens[i + 1].tokenType == TokenType::lparen && 
+        m_tokens[i + 2].tokenType == TokenType::rparen && 
+        m_tokens[i + 3].tokenType == TokenType::semicolon
+        ) {
+        m_il.push_back("call " + m_tokens[i].str);
+        return i + 4;
+    }
+
+    if (m_tokens[i].tokenType == TokenType::id && 
+        m_tokens[i + 1].tokenType == TokenType::lparen) {
+        i = i + 2;
+        // 이 까지 왔으면 매개변수가 하나이상 있는 것이다.
+        t = _expr(i, end, bi);
+        if (t < 0) {
+            char buf[256];
+            sprintf(buf, "line[%d]: 함수 인자에는 표현식이 와야합니다. %s\n", m_tokens[i].line, m_tokens[i].str.c_str());
+            m_errorMsgs.push_back(buf);
+            return -1;
+        }
+        i = t;
+
+        while (1) {
+            int tryI = i;
+            std::string rightValue = m_tokens[tryI].str;
+            TokenType tokenValue = m_tokens[tryI].tokenType;
+            if(tokenValue != TokenType::comma) {
+                break;
+            }
+            tryI++;
+            t = _expr(tryI, end, bi);
+            if (t < 0) {
+                char buf[256];
+                sprintf(buf, "line[%d]: , 뒤에 식별자를 기대했습니다.\n", m_tokens[i].line);
+                m_errorMsgs.push_back(buf);
+                return -1; 
+            }
+            tryI = t;
+            i = tryI;
+        } 
+        if (m_tokens[i].tokenType != TokenType::rparen) {
+            char buf[256];
+            sprintf(buf, "line[%d]: ) 가 빠졌습니다.\n", m_tokens[i].line);
+            m_errorMsgs.push_back(buf);
+            return -1;
+        }
+        i++;
+        if (m_tokens[i].tokenType != TokenType::semicolon) {
+            char buf[256];
+            sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line);
+            m_errorMsgs.push_back(buf);
+            return -1;
+        }
+        i++;
+        m_il.push_back("call " + m_tokens[begin].str);
+        return i;
+    }
+
+    return -1; 
 }
 
 int KParser::_expr(int begin, int end, const BlockInfo& bi) {
