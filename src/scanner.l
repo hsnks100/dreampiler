@@ -52,6 +52,11 @@ continue {
     return 12;
 }
 
+return {
+    kparser.m_tokens.emplace_back(yytext, TokenType::_return, yylineno);
+    return 12; 
+}
+
 [a-z][a-z0-9]* { 
     kparser.m_tokens.emplace_back(yytext, TokenType::id, yylineno);
     return 11;
@@ -66,6 +71,11 @@ continue {
 
 = {
     kparser.m_tokens.emplace_back(yytext, TokenType::assign, yylineno);
+    return 12;
+}
+
+:= {
+    kparser.m_tokens.emplace_back(yytext, TokenType::decassign, yylineno);
     return 12;
 }
 

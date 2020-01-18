@@ -30,26 +30,28 @@
 #include <sstream>
 #include "scanner.h"
 #include "kparser.h"
+#include "vm.h"
 
 using namespace std;
 
 extern KParser kparser;
 
 int main(int argc, char **argv) {
+    driver();
+    return 0;
     std::istringstream is(R"(
-    var ab ;
-    func main() {
-        ab = 1 * 2 + 3 / 1 + 33 + 100;
+    func mult(x, y, z) {
+        sum := 0;
+        j := y;
+        while j != 0 { 
+            sum = sum + x;
+            j = j - 1;
+        }
+        return sum + z;
     }
-    func sub1(a, b, c) {
-        ab = a + b + c;
-    }
-    func sub2(a) {
-        sub1(2, 3, 4);
-        ab = a;
-    }
-    func sub3() {
-        ab = 3;
+    func main(a, b) {
+        mult(4, 7, 100);
+        return 0;
     }
     )"); 
     Scanner m_scanner(&is);

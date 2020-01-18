@@ -1,5 +1,6 @@
 
 #include "kparser.h"
+#include <iostream>
 void KParser::parse() {
     printf("tokens size() = %d\n", m_tokens.size());
     BlockInfo bi("", "", 0);
@@ -66,9 +67,13 @@ int KParser::_func(int begin, int end, const BlockInfo& bi) {
     if (m_tokens[i].tokenType != TokenType::id) {
         return -1;
     }
-    m_il.push_back("func " + m_tokens[i].str);
+
+    std::string funcName = m_tokens[i].str;
+    m_il.push_back("func " + funcName);
+    int funcDeclIndex = m_il.size() - 1;
     i++;
 
+    m_parameters = 0;
     t = _parameters(i, end, bi);
     if (t < 0) {
         char buf[256];
@@ -76,8 +81,10 @@ int KParser::_func(int begin, int end, const BlockInfo& bi) {
         m_errorMsgs.push_back(buf);
         return -1;
     }
+    m_funcToParams[funcName] = m_parameters;
     i = t;
 
+    m_locals = 0;
     t = _block(i, end, bi);
     if (t < 0) {
         char buf[256];
@@ -86,7 +93,9 @@ int KParser::_func(int begin, int end, const BlockInfo& bi) {
         return -1;
     }
     i = t;
+    // m_funcToLocals[funcName] = m_locals;
     m_il.push_back("end func");
+    m_il[funcDeclIndex] += " " + std::to_string(m_locals);
     return i;
 }
 int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
@@ -112,6 +121,7 @@ int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
         return -1;
     }
     i++;
+    m_parameters++;
 
     while (1) {
         int tryI = i;
@@ -127,6 +137,7 @@ int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
             m_errorMsgs.push_back(buf);
             return -1; 
         }
+        m_parameters++;
         tryI++;
         i = tryI;
     } 
@@ -175,14 +186,17 @@ int KParser::_statement(int begin, int end, const BlockInfo& bi) {
         i = t;
     }else if((t = _assign(i, end, bi)) >= 0) {
         i = t;
+    } else if((t = _decassign(i, end, bi)) >= 0) {
+        i = t;
     } else if((t = _block(i, end, bi)) >= 0) {
         i = t;
     } else if((t = _break(i, end, bi)) >= 0) {
         i = t;
     } else if((t = _call(i, end, bi)) >= 0) {
         i = t;
-    }
-    else {
+    } else if((t = _return(i, end, bi)) >= 0) {
+        i = t;
+    } else {
         return -1;
     }
     return i;
@@ -200,7 +214,7 @@ int KParser::_call(int begin, int end, const BlockInfo& bi) {
         m_tokens[i + 2].tokenType == TokenType::rparen && 
         m_tokens[i + 3].tokenType == TokenType::semicolon
         ) {
-        m_il.push_back("call " + m_tokens[i].str);
+        m_il.push_back("call " + m_tokens[i].str + " " + std::to_string( m_funcToParams[m_tokens[i].str]));
         return i + 4;
     }
 
@@ -249,13 +263,32 @@ int KParser::_call(int begin, int end, const BlockInfo& bi) {
             return -1;
         }
         i++;
-        m_il.push_back("call " + m_tokens[begin].str);
+        m_il.push_back("call " + m_tokens[begin].str + " " + std::to_string(m_funcToParams[m_tokens[begin].str]));
         return i;
     }
 
     return -1; 
 }
 
+int KParser::_return(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t = 0;
+
+    if (m_tokens[i].tokenType != TokenType::_return) {
+        return -1;
+    }
+    i++;
+
+    if ((t = _expr(i, end, bi)) < 0) {
+        return -1;
+    } 
+    i = t;
+    if (m_tokens[i].tokenType != TokenType::semicolon) {
+        return -1;
+    }
+    i++;
+    return i;
+}
 int KParser::_expr(int begin, int end, const BlockInfo& bi) {
     return _adv_expr(begin, end, bi);
     // int i = begin;
@@ -310,7 +343,7 @@ int KParser::_or_expr(int begin, int end, const BlockInfo& bi) {
     // exit(-1);
         // m_il.push_back(leftValue);
         // m_il.push_back(rightValue);
-        m_il.push_back("call ||");
+        m_il.push_back("or");
         i = t; 
     } 
     return i;
@@ -338,7 +371,7 @@ int KParser::_and_expr(int begin, int end, const BlockInfo& bi) {
         }
         // m_il.push_back(leftValue);
         // m_il.push_back(rightValue);
-        m_il.push_back("call &&");
+        m_il.push_back("and");
         i = t; 
     } 
     return i;
@@ -368,9 +401,9 @@ int KParser::_cmp_expr(int begin, int end, const BlockInfo& bi) {
         // m_il.push_back(leftValue);
         // m_il.push_back(rightValue);
         if(tokenValue == TokenType::equal) {
-            m_il.push_back("call ==");
+            m_il.push_back("eq");
         } else if(tokenValue == TokenType::not_equal) {
-            m_il.push_back("call !=");
+            m_il.push_back("neq");
         }
         i = t; 
     } while(0);
@@ -400,9 +433,9 @@ int KParser::_add_expr(int begin, int end, const BlockInfo& bi) {
         // m_il.push_back(leftValue);
         // m_il.push_back(rightValue);
         if(tokenValue == TokenType::plus) {
-            m_il.push_back("call +");
+            m_il.push_back("add");
         } else if(tokenValue == TokenType::minus) {
-            m_il.push_back("call -");
+            m_il.push_back("sub");
         }
         i = t; 
     } 
@@ -433,9 +466,9 @@ int KParser::_mul_expr(int begin, int end, const BlockInfo& bi) {
         // m_il.push_back(leftValue);
         // m_il.push_back(rightValue);
         if(tokenValue == TokenType::mult) {
-            m_il.push_back("call *");
+            m_il.push_back("mult");
         } else if(tokenValue == TokenType::devide) {
-            m_il.push_back("call /");
+            m_il.push_back("div");
         }
         i = t; 
     } 
@@ -472,7 +505,7 @@ int KParser::_factor_expr(int begin, int end, const BlockInfo& bi) {
         m_il.push_back("push " + m_tokens[i].str);
         i++;
     } else if(tokenType == TokenType::integer) {
-        m_il.push_back("push " + m_tokens[i].str);
+        m_il.push_back("push constant " + m_tokens[i].str);
         i++;
     } else if(tokenType == TokenType::lparen) {
         int tryI = i;
@@ -501,95 +534,6 @@ int KParser::_factor_expr(int begin, int end, const BlockInfo& bi) {
 }
 
 
-int KParser::_simple_expr(int begin, int end, const BlockInfo& bi) {
-    int i = begin;
-    int t;
-    if(m_tokens[i].tokenType == TokenType::plus || m_tokens[i].tokenType == TokenType::minus) {
-        i++;
-    }
-    t = _term(i, end, bi);
-    if (t < 0) {
-        return -1;
-    }
-    i = t;
-    while (1) {
-        int tryI = i;
-        TokenType tokenType = m_tokens[tryI].tokenType;
-        if(tokenType != TokenType::plus && tokenType != TokenType::minus) {
-            break; 
-        }
-        t = _term(tryI + 1, end, bi);
-        if (t < 0) {
-            break;
-        }
-        i = t;
-        m_il.push_back("call " + m_tokens[tryI].str); 
-    }
-    return i;
-}
-int KParser::_term(int begin, int end, const BlockInfo& bi) {
-    int i = begin;
-    int t;
-    if((t = _factor(i, end, bi)) < 0) {
-        return -1;
-    }
-    i = t;
-
-    while(1) {
-        int tryI = i;
-        TokenType tokenType = m_tokens[tryI].tokenType;
-        if(tokenType != TokenType::mult && tokenType != TokenType::devide) {
-            break; 
-        }
-        t = _factor(tryI + 1, end, bi);
-        if (t < 0) {
-            break;
-        }
-        i = t; 
-        m_il.push_back("call " + m_tokens[tryI].str); 
-    }
-    return i;
-
-}
-int KParser::_factor(int begin, int end, const BlockInfo& bi) {
-    int i = begin;
-    TokenType tokenType = m_tokens[i].tokenType;
-    if(tokenType == TokenType::id) {
-        m_il.push_back("push " + m_tokens[i].str);
-        i++;
-    } else if(tokenType == TokenType::integer) {
-        m_il.push_back("push " + m_tokens[i].str);
-        i++;
-    } else {
-        return -1;
-    }
-
-    return i;
-}
-int KParser::_equal(int begin, int end, const BlockInfo& bi) {
-    int i = begin;
-    int t;
-    int idIndex = i;
-    if( m_tokens[i].tokenType != TokenType::id ) {
-        return -1;
-    }
-    i++;
-
-    if( m_tokens[i].tokenType != TokenType::equal ) {
-        return -1;
-    }
-    i++;
-
-    int intIndex = i;
-    if( m_tokens[i].tokenType != TokenType::integer ) {
-        return -1;
-    }
-    i++;
-    m_il.push_back("..eq push " + m_tokens[idIndex].str);
-    m_il.push_back("..eq push " + m_tokens[intIndex].str);
-    m_il.push_back("call eq");
-    return i; 
-}
 int KParser::_if(int begin, int end, const BlockInfo& bi) {
     std::string sLabel = "LABEL" + std::to_string(rand() % 1000);
     std::string eLabel = "LABEL" + std::to_string(rand() % 1000);
@@ -656,7 +600,7 @@ int KParser::_while(int begin, int end, const BlockInfo& bi) {
     } else {
         i = t;
     } 
-    m_il.push_back("jne " + eLabel);
+    m_il.push_back("jz " + eLabel);
 
 
     if((t = _block(i, end, newBi)) < 0) {
@@ -692,11 +636,9 @@ int KParser::_assign(int begin, int end, const BlockInfo& bi) {
     } 
     i++; 
     if (m_tokens[i].tokenType != TokenType::assign) {
-        printf("대입문을 기대했습니다.\n");
         return -1;
     } 
     i++; 
-    m_il.push_back("push addr(" + m_tokens[idIndex].str + ")");
 
     int exprIndex = i;
     t = _expr(i, end, bi);
@@ -715,6 +657,41 @@ int KParser::_assign(int begin, int end, const BlockInfo& bi) {
         return -1;
     }
     i++;
-    m_il.push_back("call assign");
+    m_il.push_back("pop " + m_tokens[idIndex].str);
     return i;
 } 
+
+int KParser::_decassign(int begin, int end, const BlockInfo& bi) {
+    int i = begin;
+    int t;
+    int idIndex = i;
+    if (m_tokens[i].tokenType != TokenType::id) {
+        return -1;
+    } 
+    i++; 
+    if (m_tokens[i].tokenType != TokenType::decassign) {
+        return -1;
+    } 
+    i++; 
+
+    int exprIndex = i;
+    t = _expr(i, end, bi);
+    if (t < 0) {
+        char buf[256];
+        sprintf(buf, "line[%d]: 표현식의 오류\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        m_errorMsgs.push_back(buf);
+        return -1;
+    } 
+    i = t;
+
+    if (m_tokens[i].tokenType != TokenType::semicolon) {
+        char buf[256];
+        sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        m_errorMsgs.push_back(buf);
+        return -1;
+    }
+    i++;
+    m_locals++;
+    m_il.push_back("pop " + m_tokens[idIndex].str);
+    return i;
+}

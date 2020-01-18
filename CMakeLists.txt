@@ -21,6 +21,7 @@ ADD_EXECUTABLE( app.out
     # __scanner.cpp
     src/main.cpp
     src/kparser.cpp
+    src/vm.cpp
     ${FLEX_Scanner_OUTPUTS}
     # ${BISON_Parser_OUTPUTS}
     )

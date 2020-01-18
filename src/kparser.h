@@ -3,6 +3,7 @@
 #include <unistd.h> 
 #include <string>
 #include <vector>
+#include <map>
 
 enum class TokenType {
     none,
@@ -11,6 +12,7 @@ enum class TokenType {
     integer,
     id,
     assign,
+    decassign,
     lbracket,
     rbracket,
     semicolon,
@@ -29,6 +31,7 @@ enum class TokenType {
     _while,
     _break,
     _continue,
+    _return,
     eof
 };
 struct Token {
@@ -69,6 +72,11 @@ class KParser {
         std::vector<Token> m_tokens;
         std::vector<std::string> m_il;
         std::vector<std::string> m_errorMsgs;
+
+        std::map<std::string, int> m_funcToParams;
+        // std::map<std::string, int> m_funcToLocals;
+        int m_parameters = 0;
+        int m_locals = 0;
         void parse() ;
         int _root(int begin, int end, const BlockInfo& bi); 
         int _external(int begin, int end, const BlockInfo& bi); 
@@ -78,7 +86,9 @@ class KParser {
         int _statement(int begin, int end, const BlockInfo& bi);
 
         int _call(int begin, int end, const BlockInfo& bi); 
+        int _return(int begin, int end, const BlockInfo& bi); 
         int _assign(int begin, int end, const BlockInfo& bi);
+        int _decassign(int begin, int end, const BlockInfo& bi); 
         int _expr(int begin, int end, const BlockInfo& bi);
         int _adv_expr(int begin, int end, const BlockInfo& bi);
         int _or_expr(int begin, int end, const BlockInfo& bi);
@@ -92,11 +102,11 @@ class KParser {
 
 
 
-            int _simple_expr(int begin, int end, const BlockInfo& bi);
-            int _term(int begin, int end, const BlockInfo& bi);
-            int _factor(int begin, int end, const BlockInfo& bi);
-            int _equal(int begin, int end, const BlockInfo& bi);
-            int _binary_operator(int beign, int end, const BlockInfo& bi);
+            // int _simple_expr(int begin, int end, const BlockInfo& bi);
+            // int _term(int begin, int end, const BlockInfo& bi);
+            // int _factor(int begin, int end, const BlockInfo& bi);
+            // int _equal(int begin, int end, const BlockInfo& bi);
+            // int _binary_operator(int beign, int end, const BlockInfo& bi);
 
         int _if(int begin, int end, const BlockInfo& bi);
         int _block(int begin, int end, const BlockInfo& bi);
