@@ -142,8 +142,7 @@ return {
 }
 
 [\n\t ] {
-    // cout << "Scanner: whitechar (ignored)" << endl;
-
+    // cout << "Scanner: whitechar (ignored)" << endl; 
 }
 
 

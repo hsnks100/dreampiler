@@ -6,6 +6,7 @@
 int driver();
 class Vm {
     public:
+        static const int STACK_FRAME_SIZE = 3;
         std::vector<std::vector<std::string>> m_program; 
         std::vector<int> m_stack; 
         std::map<std::string, int> m_labelToEip;
@@ -50,21 +51,32 @@ class Vm {
                 m_program.push_back(k);
                 eip++;
             }
+            m_program.push_back({"call", "main", "0"});
+            eip++;
+            int line = 0;
             for(auto i: m_program) {
+                std::cout << line << " ";
                 for(auto j: i) {
                     std::cout << j << " ";
                 }
                 std::cout << std::endl;
+                line++;
             }
+            m_eip = eip - 1;
+            std::cout << "entry point: " << m_eip << std::endl;
+        }
+        void addCommand(std::vector<std::string> k) {
+            if (k[0] == "func") {
+                m_funcToEip[k[1]] = m_program.size();
+                m_funcToLocals[k[1]] = std::stoi(k[2]); 
+            } else if(k[0] == "label") {
+                m_labelToEip[k[1]] = m_program.size();
+            }
+            m_program.push_back(k);
         }
         int step() {
-            if (m_program[m_eip].size()) {
+            if (m_program[m_eip].size() && m_eip <= m_program.size() - 1) {
                 auto cmd = m_program[m_eip][0];
-
-                // for(auto j: m_program[m_eip]) {
-                //     std::cout << j << " ";
-                // }
-                // std::cout << std::endl;
 
                 if (cmd == "neq") {
                     int t1 = getStackTop();
@@ -163,7 +175,7 @@ class Vm {
                     m_stack.push_back(m_eip + 1);
                     m_stack.push_back(m_localPointer);
                     m_stack.push_back(m_argPointer);
-                    m_argPointer = m_stack.size() - 3 - argNumber;
+                    m_argPointer = m_stack.size() - STACK_FRAME_SIZE - argNumber;
                     m_localPointer = m_stack.size();
                     m_eip = m_funcToEip[fn]; 
                 } else if (cmd == "func") {
@@ -179,9 +191,9 @@ class Vm {
                     m_eip++;
                 } else if (cmd == "return") {
                     int frame = m_localPointer;
-                    int ret = m_stack[frame - 3]; // 돌아갈 주소
-                    m_stack[m_argPointer] = m_stack[m_stack.size() - 1];
-                    int pops = m_argPointer + 1;
+                    int ret = m_stack[frame - STACK_FRAME_SIZE]; // 돌아갈 주소
+                    m_stack[m_argPointer] = getStackTop();
+                    int pops = m_argPointer + 1; // 해당 함수에서 단 하나의 숫자가 남을 때 까지 팝하기 위해서
                     std::cout << "return value: " << getStackTop() << std::endl;
                     m_argPointer = m_stack[frame - 1];
                     m_localPointer = m_stack[frame - 2];
@@ -189,6 +201,7 @@ class Vm {
                         m_stack.pop_back();
                     }
                     m_eip = ret; 
+                    std::cout << "돌아갈 주소: " << m_eip << std::endl;
                 } else if (cmd == "exit") {
                     return -1;
                 } 
@@ -198,10 +211,9 @@ class Vm {
                 // }
 
                 // std::cout << "------------\n";
-            }
-
-
-            return 0;
+                return 0;
+            } 
+            return -1;
         } 
 };
 

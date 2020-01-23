@@ -33,7 +33,40 @@ label LABEL165
 push local 0
 return
     )"); 
-    vm.loadProgram(is.str());
+
+    std::istringstream is2(R"(func mult 2
+push constant 0
+pop local 0
+push argument 1
+pop local 1
+label LABEL440
+push local 1
+push constant 0
+neq
+jz LABEL165
+push local 0
+push argument 0
+add
+pop local 0
+push local 1
+push constant 1
+sub
+pop local 1
+jmp LABEL440
+label LABEL165
+push local 0
+push argument 2
+add
+return
+func main 0
+push constant 4
+push constant 7
+push constant 100
+call mult 3
+push constant 5
+return 
+)");
+    vm.loadProgram(is2.str());
 
     while(1) {
         if(vm.step()) {

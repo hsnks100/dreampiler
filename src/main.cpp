@@ -37,21 +37,22 @@ using namespace std;
 extern KParser kparser;
 
 int main(int argc, char **argv) {
-    driver();
-    return 0;
+    // driver();
+    // std::cout << "---------\n";
+    // return 0;
     std::istringstream is(R"(
-    func mult(x, y, z) {
+    func mult(x, y, zadder) {
         sum := 0;
         j := y;
         while j != 0 { 
             sum = sum + x;
             j = j - 1;
         }
-        return sum + z;
+        return sum + zadder;
     }
     func main(a, b) {
         mult(4, 7, 100);
-        return 0;
+        return 5;
     }
     )"); 
     Scanner m_scanner(&is);
@@ -68,12 +69,24 @@ int main(int argc, char **argv) {
     std::istringstream whole;
     whole.str(is.str());
     std::string line;
-    int l = 1;
+    int l = 0;
     while (std::getline(whole, line)) {
         std::cout << "[" << l << "]" << line << std::endl;
         l++;
     }
     kparser.parse();
+    Vm vm;
+    for(auto i: kparser.m_il) {
+        vm.addCommand(i);
+    }
+    vm.addCommand({"call", "main", "0"});
+    vm.m_eip = vm.m_program.size() - 1;
+    std::cout << "eip: " << vm.m_eip << std::endl;
+    while(1) {
+        if(vm.step()) {
+            break;
+        } 
+    }
     // cout << m_scanner.get_next_token() << endl;
     // cout << m_scanner.get_next_token() << endl;
     // cout << m_scanner.get_next_token() << endl;

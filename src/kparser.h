@@ -48,13 +48,19 @@ struct Token {
 
 
 struct BlockInfo {
-    std::string sLabel = "SLABEL";
-    std::string eLabel = "EkhBEL";
-    int level = 0;
-    BlockInfo(std::string a, std::string b, int c) {
-        sLabel = a;
-        eLabel = b;
-        level = c;
+    mutable std::string sLabel = "SLABEL";
+    mutable std::string eLabel = "EkhBEL";
+    mutable int level = 0;
+    mutable std::vector<std::vector<std::string>> il;
+    // BlockInfo(std::string a, std::string b, int c) {
+    //     sLabel = a;
+    //     eLabel = b;
+    //     level = c;
+    // }
+    void addCode(std::string op, std::string opr1, std::string opr2) const {
+        il.push_back(
+            {op, opr1, opr2} 
+            );
     }
 };
 enum class Instruction { 
@@ -68,18 +74,40 @@ enum class Instruction {
 
 class KParser {
     public:
-        std::vector<std::pair<int, std::string>> m_tree;
-        std::vector<Token> m_tokens;
-        std::vector<std::string> m_il;
-        std::vector<std::string> m_errorMsgs;
+        std::vector<std::pair<int, std::string>> m_tree; ///< 
+        std::vector<Token> m_tokens; ///< 토큰화된 소스가 담기는 곳
+        std::vector<std::vector<std::string>> m_il; ///< 파싱이 진행되면서 중간 생성코드가 여기에 저장된다.
+        std::vector<std::string> m_errorMsgs; ///< 파싱이 실패했을 때, 에러메시지가 담긴다.  
+        std::map<std::string, int> m_funcToParams; ///< 어떤 함수가 몇 개의 인자가 있는지 
+        std::map<std::string, int> m_varToLocal; ///< 어떤 변수가 몇 번째 지역변수인지 저장
+        int m_increaseLocals = 0; ///< 함수에서 지역변수가 선언이 될 때 증가함. 새로운 함수 진입시 0 으로 초기화.
+        std::map<std::string, int> m_varToArg; ///< 해당 변수가 몇 번째 argument 인지 저장하는 테이블.
+        int m_increaseArgs = 0; ///< m_varToArg 보조하기 위한 변수
 
-        std::map<std::string, int> m_funcToParams;
-        // std::map<std::string, int> m_funcToLocals;
-        int m_parameters = 0;
+        int m_parameters = 0;///< m_varToArg 보조하기 위한 변수
         int m_locals = 0;
         void parse() ;
+
+        /**
+         * @brief 파싱의 시작 부분. 
+         *
+         * @param begin 파싱이 시작되는 위치
+         * @param end
+         * @param bi 파싱시에 전달되는 정보들
+         *
+         * @return 
+         */
         int _root(int begin, int end, const BlockInfo& bi); 
         int _external(int begin, int end, const BlockInfo& bi); 
+        /**
+         * @brief 함수파싱의 시작 부분. 
+         *
+         * @param begin 파싱이 시작되는 위치
+         * @param end
+         * @param bi 파싱시에 전달되는 정보들
+         *
+         * @return 
+         */
         int _func(int begin, int end, const BlockInfo& bi); 
         int _parameters(int begin, int end, const BlockInfo& bi); 
         int _var(int begin, int end, const BlockInfo& bi); 

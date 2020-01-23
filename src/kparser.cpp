@@ -3,7 +3,7 @@
 #include <iostream>
 void KParser::parse() {
     printf("tokens size() = %d\n", m_tokens.size());
-    BlockInfo bi("", "", 0);
+    BlockInfo bi;
     _root(0, m_tokens.size(), bi);
 
 
@@ -12,10 +12,17 @@ void KParser::parse() {
     }
     int tt = 0;
     for(auto i: m_il) {
+        std::string tot = "";
+        std::string seper = "";
+        for(auto j: i) {
+            if (j != "") {
+                tot += seper + j;
+                seper = " "; 
+            }
+        }
+        printf("eip[%3d]: %s\n", tt, tot.c_str());
         tt++;
-        printf("eip[%d]: %s\n", tt, i.c_str());
-    }
-
+    } 
 }
 
 int KParser::_root(int begin, int end, const BlockInfo& bi) {
@@ -57,23 +64,19 @@ int KParser::_external(int begin, int end, const BlockInfo& bi) {
 }
 int KParser::_func(int begin, int end, const BlockInfo& bi) {
     int i = begin;
-    int t = 0;
-
+    int t = 0; 
     if (m_tokens[i].tokenType != TokenType::_func) {
         return -1;
     }
-    i++;
-
+    i++; 
     if (m_tokens[i].tokenType != TokenType::id) {
         return -1;
-    }
-
+    } 
     std::string funcName = m_tokens[i].str;
-    m_il.push_back("func " + funcName);
-    int funcDeclIndex = m_il.size() - 1;
-    i++;
-
-    m_parameters = 0;
+    bi.il.clear();
+    bi.addCode("func", funcName, "");
+    i++; 
+    m_parameters = 0; 
     t = _parameters(i, end, bi);
     if (t < 0) {
         char buf[256];
@@ -85,6 +88,7 @@ int KParser::_func(int begin, int end, const BlockInfo& bi) {
     i = t;
 
     m_locals = 0;
+    m_increaseLocals = 0;
     t = _block(i, end, bi);
     if (t < 0) {
         char buf[256];
@@ -94,8 +98,20 @@ int KParser::_func(int begin, int end, const BlockInfo& bi) {
     }
     i = t;
     // m_funcToLocals[funcName] = m_locals;
-    m_il.push_back("end func");
-    m_il[funcDeclIndex] += " " + std::to_string(m_locals);
+    // bi.addCode("end", "func", ""); 
+    bi.il[0][2] = std::to_string(m_locals); 
+    for(auto& i: bi.il) {
+        if(m_varToArg.find(i[1]) != m_varToArg.end()) {
+            i[2] = std::to_string(m_varToArg[i[1]]);
+            i[1] = "argument";
+        }
+        if(m_varToLocal.find(i[1]) != m_varToLocal.end()) {
+            i[2] = std::to_string(m_varToLocal[i[1]]);
+            i[1] = "local";
+        }
+    }
+
+    m_il.insert(m_il.end(), bi.il.begin(), bi.il.end());
     return i;
 }
 int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
@@ -114,13 +130,15 @@ int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
         return i;
     }
     // 이 까지 왔으면 매개변수가 하나이상 있는 것이다.
-    if (m_tokens[i].tokenType != TokenType::id) {
+    int idIndex = i;
+    if (m_tokens[idIndex].tokenType != TokenType::id) {
         char buf[256];
-        sprintf(buf, "line[%d]: 함수 인자에는 식별자가 와야합니다.\n", m_tokens[i].line);
+        sprintf(buf, "line[%d]: 함수 인자에는 식별자가 와야합니다.\n", m_tokens[idIndex].line);
         m_errorMsgs.push_back(buf);
         return -1;
     }
     i++;
+    m_varToArg[m_tokens[idIndex].str] = m_parameters;
     m_parameters++;
 
     while (1) {
@@ -133,10 +151,11 @@ int KParser::_parameters(int begin, int end, const BlockInfo& bi) {
         tryI++;
         if (m_tokens[tryI].tokenType != TokenType::id) {
             char buf[256];
-            sprintf(buf, "line[%d]: , 뒤에 식별자를 기대했습니다.\n", m_tokens[i].line);
+            sprintf(buf, "line[%d]: , 뒤에 식별자를 기대했습니다.\n", m_tokens[tryI].line);
             m_errorMsgs.push_back(buf);
             return -1; 
         }
+        m_varToArg[m_tokens[tryI].str] = m_parameters;
         m_parameters++;
         tryI++;
         i = tryI;
@@ -214,7 +233,8 @@ int KParser::_call(int begin, int end, const BlockInfo& bi) {
         m_tokens[i + 2].tokenType == TokenType::rparen && 
         m_tokens[i + 3].tokenType == TokenType::semicolon
         ) {
-        m_il.push_back("call " + m_tokens[i].str + " " + std::to_string( m_funcToParams[m_tokens[i].str]));
+        // bi.addCode("call " + m_tokens[i].str + " " + std::to_string( m_funcToParams[m_tokens[i].str]));
+        bi.addCode("call", m_tokens[i].str,  std::to_string( m_funcToParams[m_tokens[i].str]));
         return i + 4;
     }
 
@@ -263,7 +283,8 @@ int KParser::_call(int begin, int end, const BlockInfo& bi) {
             return -1;
         }
         i++;
-        m_il.push_back("call " + m_tokens[begin].str + " " + std::to_string(m_funcToParams[m_tokens[begin].str]));
+        bi.addCode("call", m_tokens[begin].str,  std::to_string( m_funcToParams[m_tokens[begin].str]));
+        // bi.addCode("call " + m_tokens[begin].str + " " + std::to_string(m_funcToParams[m_tokens[begin].str]));
         return i;
     }
 
@@ -287,6 +308,7 @@ int KParser::_return(int begin, int end, const BlockInfo& bi) {
         return -1;
     }
     i++;
+    bi.addCode("return", "", "");
     return i;
 }
 int KParser::_expr(int begin, int end, const BlockInfo& bi) {
@@ -309,7 +331,7 @@ int KParser::_expr(int begin, int end, const BlockInfo& bi) {
     //     if (t < 0) {
     //         break;
     //     }
-    //     m_il.push_back("call eq ");
+    //     bi.addCode("call eq ");
     //     i = t; 
     // } 
     // return i;
@@ -341,9 +363,9 @@ int KParser::_or_expr(int begin, int end, const BlockInfo& bi) {
         }
     // printf("rrrrrrrrrrqweqwe\n");
     // exit(-1);
-        // m_il.push_back(leftValue);
-        // m_il.push_back(rightValue);
-        m_il.push_back("or");
+        // bi.addCode(leftValue);
+        // bi.addCode(rightValue);
+        bi.addCode("or", "", "");
         i = t; 
     } 
     return i;
@@ -369,9 +391,9 @@ int KParser::_and_expr(int begin, int end, const BlockInfo& bi) {
         if (t < 0) {
             break;
         }
-        // m_il.push_back(leftValue);
-        // m_il.push_back(rightValue);
-        m_il.push_back("and");
+        // bi.addCode(leftValue);
+        // bi.addCode(rightValue);
+        bi.addCode("and", "", "");
         i = t; 
     } 
     return i;
@@ -398,12 +420,12 @@ int KParser::_cmp_expr(int begin, int end, const BlockInfo& bi) {
         if (t < 0) {
             break;
         }
-        // m_il.push_back(leftValue);
-        // m_il.push_back(rightValue);
+        // bi.addCode(leftValue);
+        // bi.addCode(rightValue);
         if(tokenValue == TokenType::equal) {
-            m_il.push_back("eq");
+            bi.addCode("eq", "", "");
         } else if(tokenValue == TokenType::not_equal) {
-            m_il.push_back("neq");
+            bi.addCode("neq", "", "");
         }
         i = t; 
     } while(0);
@@ -430,12 +452,12 @@ int KParser::_add_expr(int begin, int end, const BlockInfo& bi) {
         if (t < 0) {
             break;
         }
-        // m_il.push_back(leftValue);
-        // m_il.push_back(rightValue);
+        // bi.addCode(leftValue);
+        // bi.addCode(rightValue);
         if(tokenValue == TokenType::plus) {
-            m_il.push_back("add");
+            bi.addCode("add", "", "");
         } else if(tokenValue == TokenType::minus) {
-            m_il.push_back("sub");
+            bi.addCode("sub", "", "");
         }
         i = t; 
     } 
@@ -463,12 +485,12 @@ int KParser::_mul_expr(int begin, int end, const BlockInfo& bi) {
         if (t < 0) {
             break;
         }
-        // m_il.push_back(leftValue);
-        // m_il.push_back(rightValue);
+        // bi.addCode(leftValue);
+        // bi.addCode(rightValue);
         if(tokenValue == TokenType::mult) {
-            m_il.push_back("mult");
+            bi.addCode("mult", "", "");
         } else if(tokenValue == TokenType::devide) {
-            m_il.push_back("div");
+            bi.addCode("div", "", "");
         }
         i = t; 
     } 
@@ -502,10 +524,10 @@ int KParser::_factor_expr(int begin, int end, const BlockInfo& bi) {
     int i = begin;
     TokenType tokenType = m_tokens[i].tokenType;
     if(tokenType == TokenType::id) {
-        m_il.push_back("push " + m_tokens[i].str);
+        bi.addCode("push", m_tokens[i].str, "");
         i++;
     } else if(tokenType == TokenType::integer) {
-        m_il.push_back("push constant " + m_tokens[i].str);
+        bi.addCode("push", "constant", m_tokens[i].str);
         i++;
     } else if(tokenType == TokenType::lparen) {
         int tryI = i;
@@ -537,7 +559,10 @@ int KParser::_factor_expr(int begin, int end, const BlockInfo& bi) {
 int KParser::_if(int begin, int end, const BlockInfo& bi) {
     std::string sLabel = "LABEL" + std::to_string(rand() % 1000);
     std::string eLabel = "LABEL" + std::to_string(rand() % 1000);
-    BlockInfo newBi{sLabel, eLabel, bi.level};
+    bi.sLabel = sLabel;
+    bi.eLabel = eLabel;
+    // BlockInfo newBi = bi;
+    // BlockInfo newBi{sLabel, eLabel, bi.level};
     int i = begin;
     int t = 0;
     if( m_tokens[i].tokenType != TokenType::_if ) {
@@ -545,19 +570,19 @@ int KParser::_if(int begin, int end, const BlockInfo& bi) {
     }
     i++;
 
-    if((t = _expr(i, end, newBi)) < 0) {
+    if((t = _expr(i, end, bi)) < 0) {
         return -1;
     } else {
         i = t;
     } 
 
-    m_il.push_back("jne " + eLabel);
-    if((t = _block(i, end, newBi)) < 0) {
+    bi.addCode("jne", eLabel, "");
+    if((t = _block(i, end, bi)) < 0) {
         return -1;
     } else {
         i = t;
     }
-    m_il.push_back(eLabel);
+    bi.addCode("label", eLabel, "");
     return i;
 }
 int KParser::_block(int begin, int end, const BlockInfo& bi) {
@@ -589,27 +614,29 @@ int KParser::_while(int begin, int end, const BlockInfo& bi) {
 
     std::string sLabel = "LABEL" + std::to_string(rand() % 1000);
     std::string eLabel = "LABEL" + std::to_string(rand() % 1000);
-    BlockInfo newBi{sLabel, eLabel, bi.level};
+    bi.sLabel = sLabel;
+    bi.eLabel = eLabel;
+    // BlockInfo newBi{sLabel, eLabel, bi.level};
     if( m_tokens[i].tokenType != TokenType::_while ) {
         return -1;
     }
     i++; 
-    m_il.push_back(sLabel);
-    if((t = _expr(i, end, newBi)) < 0) {
+    bi.addCode("label", sLabel, "");
+    if((t = _expr(i, end, bi)) < 0) {
         return -1;
     } else {
         i = t;
     } 
-    m_il.push_back("jz " + eLabel);
+    bi.addCode("jz", eLabel, "");
 
 
-    if((t = _block(i, end, newBi)) < 0) {
+    if((t = _block(i, end, bi)) < 0) {
         return -1;
     } else {
         i = t;
     }
-    m_il.push_back("jmp " + sLabel);
-    m_il.push_back(eLabel);
+    bi.addCode("jmp", sLabel, "");
+    bi.addCode("label", eLabel, "");
     return i;
 }
 int KParser::_break(int begin, int end, const BlockInfo& bi) {
@@ -624,7 +651,7 @@ int KParser::_break(int begin, int end, const BlockInfo& bi) {
         return -1;
     }
     i++;
-    m_il.push_back("jmp " + bi.eLabel);
+    bi.addCode("jmp", bi.eLabel, "");
     return i;
 }
 int KParser::_assign(int begin, int end, const BlockInfo& bi) {
@@ -657,7 +684,7 @@ int KParser::_assign(int begin, int end, const BlockInfo& bi) {
         return -1;
     }
     i++;
-    m_il.push_back("pop " + m_tokens[idIndex].str);
+    bi.addCode("pop", m_tokens[idIndex].str, "");
     return i;
 } 
 
@@ -692,6 +719,7 @@ int KParser::_decassign(int begin, int end, const BlockInfo& bi) {
     }
     i++;
     m_locals++;
-    m_il.push_back("pop " + m_tokens[idIndex].str);
+    bi.addCode("pop", m_tokens[idIndex].str, "");
+    m_varToLocal[m_tokens[idIndex].str] = m_increaseLocals++;
     return i;
 }
