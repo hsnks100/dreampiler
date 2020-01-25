@@ -15,7 +15,7 @@ void KParser::parse() {
     std::vector<int> calc;
     for(auto i: m_totalCode) {
         // tt++;
-        printf("eip[%3d]: %s\n", tt, i.c_str());
+        // printf("eip[%3d]: %s\n", tt, i.c_str());
         if (i == "add") {
             int a, b;
             a = calc[calc.size() - 1];
