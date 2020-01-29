@@ -75,15 +75,16 @@ class Vm {
             m_program.push_back(k);
         }
         int step() {
+            // hana0720
             if (m_program[m_eip].size() && m_eip <= m_program.size() - 1) {
-                auto cmd = m_program[m_eip][0];
-
+                auto cmd = m_program[m_eip][0]; 
                 if (cmd == "neq") {
                     int t1 = getStackTop();
                     m_stack.pop_back();
                     int t2 = getStackTop();
                     m_stack.pop_back(); 
                     m_stack.push_back(t1 != t2);
+                    printf("%d %d\n", t1, t2);
                     m_eip++;
                 } else if (cmd == "eq") {
                     int t1 = getStackTop();
@@ -92,7 +93,37 @@ class Vm {
                     m_stack.pop_back(); 
                     m_stack.push_back(t1 == t2);
                     m_eip++;
-                } else if (cmd == "add") {
+                } 
+                else if (cmd == "lt") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 < t1);
+                    m_eip++;
+                }else if (cmd == "lte") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 <= t1);
+                    m_eip++;
+                }else if (cmd == "gt") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 < t1);
+                    m_eip++;
+                }else if (cmd == "gte") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 <= t1);
+                    m_eip++;
+                } 
+                else if (cmd == "add") {
                     int t1 = getStackTop();
                     m_stack.pop_back();
                     int t2 = getStackTop();
@@ -106,7 +137,33 @@ class Vm {
                     m_stack.pop_back(); 
                     m_stack.push_back(t2 - t1);
                     m_eip++;
-                } 
+                } else if (cmd == "mult") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 * t1);
+                    m_eip++;
+                } else if (cmd == "div") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 / t1);
+                    m_eip++;
+                } else if (cmd == "neg") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    m_stack.push_back(-t1);
+                    m_eip++;
+                } else if (cmd == "and") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 && t1);
+                    m_eip++;
+                }
                 else if (cmd == "push") {
                     if (m_program[m_eip].size() < 3) {
                         return -1;
@@ -127,21 +184,22 @@ class Vm {
                     m_eip++;
                 } else if (cmd == "pop") {
                     if (m_program[m_eip].size() < 3) {
-                        return -1;
-                    }
-                    auto next = m_program[m_eip][1];
-                    if (next == "local") {
-                        auto pos = std::stoi(m_program[m_eip][2]);
-                        m_stack[m_localPointer + pos] = getStackTop();
                         m_stack.pop_back();
-                    } else if (next == "argument") {
-                        auto pos = std::stoi(m_program[m_eip][2]);
-                        m_stack[m_argPointer + pos] = getStackTop();
-                        m_stack.pop_back();
-                    } else if (next == "constant") {
-                        // not op
                     } else {
-                        return -1;
+                        auto next = m_program[m_eip][1];
+                        if (next == "local") {
+                            auto pos = std::stoi(m_program[m_eip][2]);
+                            m_stack[m_localPointer + pos] = getStackTop();
+                            m_stack.pop_back();
+                        } else if (next == "argument") {
+                            auto pos = std::stoi(m_program[m_eip][2]);
+                            m_stack[m_argPointer + pos] = getStackTop();
+                            m_stack.pop_back();
+                        } else if (next == "constant") {
+                            // not op
+                        } else {
+                            return -1;
+                        }
                     }
                     m_eip++;
                 } 
@@ -157,6 +215,7 @@ class Vm {
                     } else {
                         m_eip++;
                     }
+                    m_stack.pop_back(); 
                 } else if (cmd == "jnz") {
                     auto next = m_program[m_eip][1];
                     if (getStackTop() != 0) {
@@ -164,6 +223,7 @@ class Vm {
                     } else {
                         m_eip++;
                     }
+                    m_stack.pop_back(); 
                 } 
                 else if (cmd == "call") {
                     // call fn 2

@@ -1,31 +1,3 @@
-/*
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Krzysztof Narkiewicz <krzysztof.narkiewicz@ezaquarii.com>
- * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- * 
- */
-
 #include <iostream>
 #include <sstream>
 #include "scanner.h"
@@ -41,17 +13,22 @@ int main(int argc, char **argv) {
     // std::cout << "---------\n";
     // return 0;
     std::istringstream is(R"(
-    func mult(x, y, zadder) {
+    func fsum(until) { 
+        i := 0;
         sum := 0;
-        j := y;
-        while j != 0 { 
-            sum = sum + x;
-            j = j - 1;
+        while i<=until {
+            sum = sum + i;
+            i = i + 1; 
         }
-        return sum + zadder;
+        return sum;
     }
-    func main(a, b) {
-        mult(4, 7, 100);
+
+    func main() {
+        a := fsum(50);
+        fsum(100);
+        fsum(<<<);
+        if 1 {
+        }
         return 5;
     }
     )"); 
@@ -64,12 +41,12 @@ int main(int argc, char **argv) {
     //     // std::cout << seper << i.str << "(" << int(i.tokenType) << ")";
     //     std::cout << seper << i.str;
     //     seper = " ";
-    // } 
+    // }
 
     std::istringstream whole;
     whole.str(is.str());
     std::string line;
-    int l = 0;
+    int l = 1;
     while (std::getline(whole, line)) {
         std::cout << "[" << l << "]" << line << std::endl;
         l++;
@@ -86,6 +63,25 @@ int main(int argc, char **argv) {
         if(vm.step()) {
             break;
         } 
+    }
+    std::vector<int> answer = {
+        (200 + 12) * 34 + 56 - 100,
+        200 + 12 * 34 + 56 - 100,
+        200 + (12 * 34) + 56 - 100,
+        -100,
+        1 + -5,
+        -(1 + -5),
+        -(1 + -5)*4 + 100 * 3, 
+        1 * -100,
+        1 * -100 + 30 / 3 - (1 + -3) - (10 + 1030 + 30) * 3 * 2 -((123 + 30)), 
+        (1 * -100 + 30 / 3 - (1 + -3) - (10 + 1030 + 30) * 3 * 2 -((123 + 30))), 
+        (1 * -100 + 30 / 3 - (1 + -3) - (10 + 1030 + 30) * 3 * 2 -((123 + 30))) * 3 - 100,
+        100 - -100, 
+        100 - (-100),
+        100 - (-100 + 1 - 3 * 10 / 2 / 5 - 10 + 3838 - 1003 + 13) - 3 - 1-  3
+    }; 
+    for(auto i: answer) {
+        printf("correct %d\n", i);
     }
     // cout << m_scanner.get_next_token() << endl;
     // cout << m_scanner.get_next_token() << endl;

@@ -20,6 +20,10 @@ enum class TokenType {
     logical_and,
     equal,
     not_equal,
+    less_than, // <
+    less_than_equal, // <=
+    greater_than, // >
+    greater_than_equal,  // >=
     plus,
     minus,
     mult,
@@ -48,16 +52,16 @@ struct Token {
 
 
 struct BlockInfo {
-    mutable std::string sLabel = "SLABEL";
-    mutable std::string eLabel = "EkhBEL";
-    mutable int level = 0;
-    mutable std::vector<std::vector<std::string>> il;
+    std::string sLabel = "SLABEL";
+    std::string eLabel = "EkhBEL";
+    int level = 0;
+    std::vector<std::vector<std::string>> il;
     // BlockInfo(std::string a, std::string b, int c) {
     //     sLabel = a;
     //     eLabel = b;
     //     level = c;
     // }
-    void addCode(std::string op, std::string opr1, std::string opr2) const {
+    void addCode(std::string op, std::string opr1, std::string opr2) {
         il.push_back(
             {op, opr1, opr2} 
             );
@@ -87,6 +91,7 @@ class KParser {
         int m_parameters = 0;///< m_varToArg 보조하기 위한 변수
         int m_locals = 0;
         void parse() ;
+        void addErrorString(int l, const std::string& a);
 
         /**
          * @brief 파싱의 시작 부분. 
@@ -97,8 +102,8 @@ class KParser {
          *
          * @return 
          */
-        int _root(int begin, int end, const BlockInfo& bi); 
-        int _external(int begin, int end, const BlockInfo& bi); 
+        int _root(int begin, int end, BlockInfo& bi); 
+        int _external(int begin, int end, BlockInfo& bi); 
         /**
          * @brief 함수파싱의 시작 부분. 
          *
@@ -108,36 +113,30 @@ class KParser {
          *
          * @return 
          */
-        int _func(int begin, int end, const BlockInfo& bi); 
-        int _parameters(int begin, int end, const BlockInfo& bi); 
-        int _var(int begin, int end, const BlockInfo& bi); 
-        int _statement(int begin, int end, const BlockInfo& bi);
+        int _func(int begin, int end, BlockInfo& bi); 
+        int _parameters(int begin, int end, BlockInfo& bi); 
+        int _var(int begin, int end, BlockInfo& bi); 
+        int _statement(int begin, int end, BlockInfo& bi);
 
-        int _call(int begin, int end, const BlockInfo& bi); 
-        int _return(int begin, int end, const BlockInfo& bi); 
-        int _assign(int begin, int end, const BlockInfo& bi);
-        int _decassign(int begin, int end, const BlockInfo& bi); 
-        int _expr(int begin, int end, const BlockInfo& bi);
-        int _adv_expr(int begin, int end, const BlockInfo& bi);
-        int _or_expr(int begin, int end, const BlockInfo& bi);
-        int _and_expr(int begin, int end, const BlockInfo& bi);
-        int _cmp_expr(int begin, int end, const BlockInfo& bi);
-        int _add_expr(int begin, int end, const BlockInfo& bi);
-        int _mul_expr(int begin, int end, const BlockInfo& bi);
-        int _mul_op(int begin, int end, const BlockInfo& bi);
-        int _sign_expr(int begin, int end, const BlockInfo& bi);
-        int _factor_expr(int begin, int end, const BlockInfo& bi);
+        int _call(int begin, int end, BlockInfo& bi); 
+        int _return(int begin, int end, BlockInfo& bi); 
+        int _assign(int begin, int end, BlockInfo& bi);
+        int _decassign(int begin, int end, BlockInfo& bi); 
+        int _expr(int begin, int end, BlockInfo& bi);
+        int _simple_expr(int begin, int end, BlockInfo& bi);
+        int _adv_expr(int begin, int end, BlockInfo& bi);
+        int _or_expr(int begin, int end, BlockInfo& bi);
+        int _and_expr(int begin, int end, BlockInfo& bi);
+        int _cmp_expr(int begin, int end, BlockInfo& bi);
+        int _add_expr(int begin, int end, BlockInfo& bi);
+        int _mul_expr(int begin, int end, BlockInfo& bi);
+        int _mul_op(int begin, int end, BlockInfo& bi);
+        int _sign_expr(int begin, int end, BlockInfo& bi);
+        int _factor_expr(int begin, int end, BlockInfo& bi); 
 
 
-
-            // int _simple_expr(int begin, int end, const BlockInfo& bi);
-            // int _term(int begin, int end, const BlockInfo& bi);
-            // int _factor(int begin, int end, const BlockInfo& bi);
-            // int _equal(int begin, int end, const BlockInfo& bi);
-            // int _binary_operator(int beign, int end, const BlockInfo& bi);
-
-        int _if(int begin, int end, const BlockInfo& bi);
-        int _block(int begin, int end, const BlockInfo& bi);
-        int _while(int begin, int end, const BlockInfo& bi);
-        int _break(int begin, int end, const BlockInfo& bi);
+        int _if(int begin, int end,  BlockInfo& bi);
+        int _block(int begin, int end,  BlockInfo& bi);
+        int _while(int begin, int end,  BlockInfo& bi);
+        int _break(int begin, int end,  BlockInfo& bi);
 };

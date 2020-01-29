@@ -129,6 +129,28 @@ return {
     return 12;
 }
 
+\< {
+    printf("plz1\n");
+    kparser.m_tokens.emplace_back(yytext, TokenType::less_than, yylineno);
+    return 12;
+}
+
+\<= {
+    printf("plz\n");
+    kparser.m_tokens.emplace_back(yytext, TokenType::less_than_equal, yylineno);
+    return 12;
+}
+
+\> {
+    kparser.m_tokens.emplace_back(yytext, TokenType::greater_than, yylineno);
+    return 12;
+}
+
+\>= {
+    kparser.m_tokens.emplace_back(yytext, TokenType::greater_than_equal, yylineno);
+    return 12;
+}
+
 \( {
     kparser.m_tokens.emplace_back(yytext, TokenType::lparen, yylineno);
     return 12;
