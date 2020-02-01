@@ -84,7 +84,6 @@ class Vm {
                     int t2 = getStackTop();
                     m_stack.pop_back(); 
                     m_stack.push_back(t1 != t2);
-                    printf("%d %d\n", t1, t2);
                     m_eip++;
                 } else if (cmd == "eq") {
                     int t1 = getStackTop();
@@ -113,14 +112,14 @@ class Vm {
                     m_stack.pop_back();
                     int t2 = getStackTop();
                     m_stack.pop_back(); 
-                    m_stack.push_back(t2 < t1);
+                    m_stack.push_back(t2 > t1);
                     m_eip++;
                 }else if (cmd == "gte") {
                     int t1 = getStackTop();
                     m_stack.pop_back();
                     int t2 = getStackTop();
                     m_stack.pop_back(); 
-                    m_stack.push_back(t2 <= t1);
+                    m_stack.push_back(t2 >= t1);
                     m_eip++;
                 } 
                 else if (cmd == "add") {
@@ -163,7 +162,15 @@ class Vm {
                     m_stack.pop_back(); 
                     m_stack.push_back(t2 && t1);
                     m_eip++;
+                } else if (cmd == "or") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 || t1);
+                    m_eip++;
                 }
+
                 else if (cmd == "push") {
                     if (m_program[m_eip].size() < 3) {
                         return -1;
@@ -197,6 +204,8 @@ class Vm {
                             m_stack.pop_back();
                         } else if (next == "constant") {
                             // not op
+                        } else if (next == "") {
+                            m_stack.pop_back(); 
                         } else {
                             return -1;
                         }
@@ -228,16 +237,26 @@ class Vm {
                 else if (cmd == "call") {
                     // call fn 2
                     if (m_program[m_eip].size() < 3) {
+                        std::cout << "<3\n";
                         return -1;
                     }
                     auto fn = m_program[m_eip][1];
-                    int argNumber = std::stoi(m_program[m_eip][2]);
-                    m_stack.push_back(m_eip + 1);
-                    m_stack.push_back(m_localPointer);
-                    m_stack.push_back(m_argPointer);
-                    m_argPointer = m_stack.size() - STACK_FRAME_SIZE - argNumber;
-                    m_localPointer = m_stack.size();
-                    m_eip = m_funcToEip[fn]; 
+                    if(fn == "print") {
+                        int t = *m_stack.rbegin();
+                        // m_stack.pop_back(); 
+                        std::cout << t << "built-in-function\n";
+                        m_eip++;
+                    } else {
+                        int argNumber = std::stoi(m_program[m_eip][2]);
+                        int oldLocalPointer = m_localPointer;
+                        int oldArgPointer = m_argPointer;
+                        m_argPointer = m_stack.size() - argNumber;
+                        m_stack.push_back(m_eip + 1);
+                        m_stack.push_back(oldLocalPointer);
+                        m_stack.push_back(oldArgPointer);
+                        m_localPointer = m_stack.size();
+                        m_eip = m_funcToEip[fn]; 
+                    }
                 } else if (cmd == "func") {
                     // call fn 2
                     if (m_program[m_eip].size() < 3) {
@@ -254,7 +273,6 @@ class Vm {
                     int ret = m_stack[frame - STACK_FRAME_SIZE]; // 돌아갈 주소
                     m_stack[m_argPointer] = getStackTop();
                     int pops = m_argPointer + 1; // 해당 함수에서 단 하나의 숫자가 남을 때 까지 팝하기 위해서
-                    std::cout << "return value: " << getStackTop() << std::endl;
                     m_argPointer = m_stack[frame - 1];
                     m_localPointer = m_stack[frame - 2];
                     while (m_stack.size() > pops) {

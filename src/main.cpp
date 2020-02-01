@@ -12,23 +12,29 @@ int main(int argc, char **argv) {
     // driver();
     // std::cout << "---------\n";
     // return 0;
+
     std::istringstream is(R"(
-    func fsum(until) { 
-        i := 0;
+    func fibo(n) {
+        if n <= 2 {
+            return 1;
+        }
+        return fibo(n-1) + fibo(n-2);
+    } 
+    func loop(n) {
         sum := 0;
-        while i<=until {
-            sum = sum + i;
-            i = i + 1; 
+        while n > 0 {
+            sum = sum + n;
+            n = n - 1;
         }
         return sum;
     }
-
+    func threesum(a, b, c) {
+        return a + b + c;
+    }
     func main() {
-        a := fsum(50);
-        fsum(100);
-        fsum(<<<);
-        if 1 {
-        }
+        print(fibo(10));
+        print(loop(100));
+        print(threesum(2, 3, 4+5));
         return 5;
     }
     )"); 
@@ -64,28 +70,5 @@ int main(int argc, char **argv) {
             break;
         } 
     }
-    std::vector<int> answer = {
-        (200 + 12) * 34 + 56 - 100,
-        200 + 12 * 34 + 56 - 100,
-        200 + (12 * 34) + 56 - 100,
-        -100,
-        1 + -5,
-        -(1 + -5),
-        -(1 + -5)*4 + 100 * 3, 
-        1 * -100,
-        1 * -100 + 30 / 3 - (1 + -3) - (10 + 1030 + 30) * 3 * 2 -((123 + 30)), 
-        (1 * -100 + 30 / 3 - (1 + -3) - (10 + 1030 + 30) * 3 * 2 -((123 + 30))), 
-        (1 * -100 + 30 / 3 - (1 + -3) - (10 + 1030 + 30) * 3 * 2 -((123 + 30))) * 3 - 100,
-        100 - -100, 
-        100 - (-100),
-        100 - (-100 + 1 - 3 * 10 / 2 / 5 - 10 + 3838 - 1003 + 13) - 3 - 1-  3
-    }; 
-    for(auto i: answer) {
-        printf("correct %d\n", i);
-    }
-    // cout << m_scanner.get_next_token() << endl;
-    // cout << m_scanner.get_next_token() << endl;
-    // cout << m_scanner.get_next_token() << endl;
-    // cout << m_scanner.get_next_token() << endl;
     return 0;
 }

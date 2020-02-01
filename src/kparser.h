@@ -55,17 +55,6 @@ struct BlockInfo {
     std::string sLabel = "SLABEL";
     std::string eLabel = "EkhBEL";
     int level = 0;
-    std::vector<std::vector<std::string>> il;
-    // BlockInfo(std::string a, std::string b, int c) {
-    //     sLabel = a;
-    //     eLabel = b;
-    //     level = c;
-    // }
-    void addCode(std::string op, std::string opr1, std::string opr2) {
-        il.push_back(
-            {op, opr1, opr2} 
-            );
-    }
 };
 enum class Instruction { 
     INST_PUSH = 0x00, 
@@ -90,6 +79,12 @@ class KParser {
 
         int m_parameters = 0;///< m_varToArg 보조하기 위한 변수
         int m_locals = 0;
+        std::vector<std::vector<std::string>> m_codes;
+        void addCode(std::string op, std::string opr1, std::string opr2) {
+            m_codes.push_back(
+                {op, opr1, opr2} 
+                );
+        }
         void parse() ;
         void addErrorString(int l, const std::string& a);
 
@@ -113,30 +108,29 @@ class KParser {
          *
          * @return 
          */
-        int _func(int begin, int end, BlockInfo& bi); 
-        int _parameters(int begin, int end, BlockInfo& bi); 
-        int _var(int begin, int end, BlockInfo& bi); 
-        int _statement(int begin, int end, BlockInfo& bi);
+        int _func(int begin, int end, BlockInfo bi); 
+        int _parameters(int begin, int end, BlockInfo bi); 
+        int _var(int begin, int end, BlockInfo bi); 
+        int _statement(int begin, int end, BlockInfo bi);
 
-        int _call(int begin, int end, BlockInfo& bi); 
-        int _return(int begin, int end, BlockInfo& bi); 
-        int _assign(int begin, int end, BlockInfo& bi);
-        int _decassign(int begin, int end, BlockInfo& bi); 
-        int _expr(int begin, int end, BlockInfo& bi);
-        int _simple_expr(int begin, int end, BlockInfo& bi);
-        int _adv_expr(int begin, int end, BlockInfo& bi);
-        int _or_expr(int begin, int end, BlockInfo& bi);
-        int _and_expr(int begin, int end, BlockInfo& bi);
-        int _cmp_expr(int begin, int end, BlockInfo& bi);
-        int _add_expr(int begin, int end, BlockInfo& bi);
-        int _mul_expr(int begin, int end, BlockInfo& bi);
-        int _mul_op(int begin, int end, BlockInfo& bi);
-        int _sign_expr(int begin, int end, BlockInfo& bi);
-        int _factor_expr(int begin, int end, BlockInfo& bi); 
-
-
-        int _if(int begin, int end,  BlockInfo& bi);
-        int _block(int begin, int end,  BlockInfo& bi);
-        int _while(int begin, int end,  BlockInfo& bi);
-        int _break(int begin, int end,  BlockInfo& bi);
+        int _call(int begin, int end, BlockInfo bi); 
+        int _return(int begin, int end, BlockInfo bi); 
+        int _assign(int begin, int end, BlockInfo bi);
+        int _decassign(int begin, int end, BlockInfo bi); 
+        int _expr(int begin, int end, BlockInfo bi);
+        int _simple_expr(int begin, int end, BlockInfo bi);
+        int _adv_expr(int begin, int end, BlockInfo bi);
+        int _or_expr(int begin, int end, BlockInfo bi);
+        int _and_expr(int begin, int end, BlockInfo bi);
+        int _cmp_expr(int begin, int end, BlockInfo bi);
+        int _add_expr(int begin, int end, BlockInfo bi);
+        int _mul_expr(int begin, int end, BlockInfo bi);
+        int _mul_op(int begin, int end, BlockInfo bi);
+        int _sign_expr(int begin, int end, BlockInfo bi);
+        int _factor_expr(int begin, int end, BlockInfo bi); 
+        int _if(int begin, int end,  BlockInfo bi);
+        int _block(int begin, int end,  BlockInfo bi);
+        int _while(int begin, int end,  BlockInfo bi);
+        int _break(int begin, int end,  BlockInfo bi);
+        int _continue(int begin, int end,  BlockInfo bi);
 };
