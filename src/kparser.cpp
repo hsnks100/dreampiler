@@ -249,12 +249,11 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
     // 인자가 없는 경우 
     if (m_tokens[i].tokenType == TokenType::id && 
         m_tokens[i + 1].tokenType == TokenType::lparen && 
-        m_tokens[i + 2].tokenType == TokenType::rparen && 
-        m_tokens[i + 3].tokenType == TokenType::semicolon
+        m_tokens[i + 2].tokenType == TokenType::rparen
         ) {
         // bi.addCode("call " + m_tokens[i].str + " " + std::to_string( m_funcToParams[m_tokens[i].str]));
         addCode("call", m_tokens[i].str,  std::to_string( m_funcToParams[m_tokens[i].str]));
-        return i + 4;
+        return i + 3;
     }
 
     // 인자가 하나이상 있는 경우
@@ -286,7 +285,7 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
             i = tryI;
         } 
         if (m_tokens[i].tokenType != TokenType::rparen) {
-            addErrorString(i, ") 가 빠졌습니다.");
+            addErrorString(i, "_call: ) 가 빠졌습니다.");
             return -1;
         }
         i++;
@@ -521,7 +520,10 @@ int KParser::_mul_expr(int begin, int end,  BlockInfo bi) {
             addCode("mult", "", "");
         } else if(tokenValue == TokenType::devide) {
             addCode("div", "", "");
+        } else if(tokenValue == TokenType::modular) {
+            addCode("mod", "", "");
         }
+
         i = t; 
     } 
     return i;
@@ -529,7 +531,8 @@ int KParser::_mul_expr(int begin, int end,  BlockInfo bi) {
 
 int KParser::_mul_op(int begin, int end,  BlockInfo bi) {
     int i = begin;
-    if (m_tokens[i].tokenType != TokenType::mult && m_tokens[i].tokenType != TokenType::devide) {
+    if (m_tokens[i].tokenType != TokenType::mult && m_tokens[i].tokenType != TokenType::devide && 
+        m_tokens[i].tokenType != TokenType::modular) {
         return -1;
     }
     i++;
@@ -581,8 +584,7 @@ int KParser::_factor_expr(int begin, int end,  BlockInfo bi) {
     } 
     else {
         return -1;
-    }
-
+    } 
     return i;
 }
 
@@ -725,7 +727,7 @@ int KParser::_decassign(int begin, int end,  BlockInfo bi) {
     t = _expr(i, end, bi);
     if (t < 0) {
         char buf[256];
-        sprintf(buf, "line[%d]: 표현식의 오류\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        sprintf(buf, "line[%d]: decassign 표현식의 오류\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
         m_errorMsgs.push_back(buf);
         return -1;
     } 
@@ -733,7 +735,7 @@ int KParser::_decassign(int begin, int end,  BlockInfo bi) {
 
     if (m_tokens[i].tokenType != TokenType::semicolon) {
         char buf[256];
-        sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        sprintf(buf, "line[%d]: _decassign ; 가 빠졌습니다.\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
         m_errorMsgs.push_back(buf);
         return -1;
     }

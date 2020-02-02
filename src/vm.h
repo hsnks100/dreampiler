@@ -21,9 +21,6 @@ class Vm {
             return m_stack[m_stack.size() - 1];
         }
 
-        // void popStack() {
-        //     m_stack.pop_back();
-        // }
         std::vector<std::string> split(std::string prg, std::string delimiter) {
             std::string s = prg;
             std::vector<std::string> ret; 
@@ -149,6 +146,13 @@ class Vm {
                     int t2 = getStackTop();
                     m_stack.pop_back(); 
                     m_stack.push_back(t2 / t1);
+                    m_eip++;
+                } else if (cmd == "mod") {
+                    int t1 = getStackTop();
+                    m_stack.pop_back();
+                    int t2 = getStackTop();
+                    m_stack.pop_back(); 
+                    m_stack.push_back(t2 % t1);
                     m_eip++;
                 } else if (cmd == "neg") {
                     int t1 = getStackTop();
@@ -279,7 +283,7 @@ class Vm {
                         m_stack.pop_back();
                     }
                     m_eip = ret; 
-                    std::cout << "돌아갈 주소: " << m_eip << std::endl;
+                    // std::cout << "돌아갈 주소: " << m_eip << std::endl;
                 } else if (cmd == "exit") {
                     return -1;
                 } 

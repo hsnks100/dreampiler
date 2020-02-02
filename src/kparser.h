@@ -28,6 +28,7 @@ enum class TokenType {
     minus,
     mult,
     devide,
+    modular,
     lparen,
     rparen,
     comma,

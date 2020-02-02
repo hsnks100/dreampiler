@@ -31,10 +31,34 @@ int main(int argc, char **argv) {
     func threesum(a, b, c) {
         return a + b + c;
     }
+    func breaktest() {
+        i := 0;
+        tot := 0;
+        while 1 {
+            i = i + 1;
+            tot = tot + i;
+            print(tot);
+            if tot > 50 {
+                break;
+            }
+        }
+        return tot;
+    }
+    func continuetest() {
+        i := 0;
+        while i < 100 {
+            i = i + 1;
+            if i % 2 != 0 {
+                continue;
+            }
+            print(i);
+        }
+        return 0;
+    }
     func main() {
-        print(fibo(10));
-        print(loop(100));
-        print(threesum(2, 3, 4+5));
+        g := breaktest();
+        print(g);
+        continuetest();
         return 5;
     }
     )"); 

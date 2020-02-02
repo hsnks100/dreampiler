@@ -95,6 +95,11 @@ return {
     kparser.m_tokens.emplace_back(yytext, TokenType::devide, yylineno);
     return 12;
 }
+
+% {
+    kparser.m_tokens.emplace_back(yytext, TokenType::modular, yylineno);
+    return 12;
+}
 \{ { 
     kparser.m_tokens.emplace_back(yytext, TokenType::lbracket, yylineno);
     return 13;
