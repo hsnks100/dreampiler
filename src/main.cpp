@@ -20,14 +20,6 @@ int main(int argc, char **argv) {
         }
         return fibo(n-1) + fibo(n-2);
     } 
-    func loop(n) {
-        sum := 0;
-        while n > 0 {
-            sum = sum + n;
-            n = n - 1;
-        }
-        return sum;
-    }
     func threesum(a, b, c) {
         return a + b + c;
     }
@@ -55,10 +47,26 @@ int main(int argc, char **argv) {
         }
         return 0;
     }
+
+    func gugudan() {
+        i := 2;
+        while i <= 9 {
+            j := 1;
+            while j <= 9 {
+                print(i * j);
+                j = j + 1;
+            }
+            print(-1);
+            i = i + 1;
+        }
+        return 0;
+    }
     func main() {
         g := breaktest();
         print(g);
         continuetest();
+        gugudan();
+        print(fibo(9));
         return 5;
     }
     )"); 

@@ -4,7 +4,7 @@
 void KParser::parse() {
     printf("tokens size() = %d\n", m_tokens.size());
     BlockInfo bi;
-    _root(0, m_tokens.size(), bi);
+    _root(0, bi);
 
 
     for(auto i=m_errorMsgs.rbegin(); i != m_errorMsgs.rend(); i++) {
@@ -30,12 +30,12 @@ void KParser::addErrorString(int l, const std::string& a) {
     sprintf(buf, "line[%d]: %s\n", m_tokens[l].line, a.c_str());
     m_errorMsgs.push_back(buf);
 }
-int KParser::_root(int begin, int end,  BlockInfo& bi) {
+int KParser::_root(int begin,  BlockInfo& bi) {
     int i = begin;
     int t = 0;
 
-    while (i < end) {
-        t = _external(i, end, bi);
+    while (i < m_tokens.size()) {
+        t = _external(i, bi);
         i = t;
         if (t < 0) {
             break;
@@ -44,7 +44,7 @@ int KParser::_root(int begin, int end,  BlockInfo& bi) {
     }
     return i; 
 }
-int KParser::_external(int begin, int end,  BlockInfo& bi) { 
+int KParser::_external(int begin,  BlockInfo& bi) { 
     int i = begin;
     int t = 0;
 
@@ -53,20 +53,20 @@ int KParser::_external(int begin, int end,  BlockInfo& bi) {
         return i;
     }
 
-    t = _func(i, end, bi); 
+    t = _func(i, bi); 
     if (t >= 0) {
         m_errorMsgs.clear();
         return t;
     }
 
-    t = _var(i, end, bi); 
+    t = _var(i, bi); 
     if (t >= 0) {
         return t;
     }
     addErrorString(i, "함수 선언이나 변수 선언이 와야 합니다.");
     return -1;
 }
-int KParser::_func(int begin, int end,  BlockInfo bi) {
+int KParser::_func(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0; 
     if (m_tokens[i].tokenType != TokenType::_func) {
@@ -82,7 +82,7 @@ int KParser::_func(int begin, int end,  BlockInfo bi) {
     addCode("func", funcName, "");
     i++; 
     m_parameters = 0; 
-    t = _parameters(i, end, bi);
+    t = _parameters(i, bi);
     if (t < 0) {
         addErrorString(i, "함수인자 정의가 잘못 됐습니다.");
         return -1;
@@ -92,14 +92,12 @@ int KParser::_func(int begin, int end,  BlockInfo bi) {
 
     m_locals = 0;
     m_increaseLocals = 0;
-    t = _block(i, end, bi);
+    t = _block(i, bi);
     if (t < 0) {
         addErrorString(i, "함수몸체 정의가 잘못 됐습니다.");
         return -1;
     }
     i = t;
-    // m_funcToLocals[funcName] = m_locals;
-    // bi.addCode("end", "func", ""); 
     m_codes[0][2] = std::to_string(m_locals); 
     for(auto& i: m_codes) {
         if(m_varToArg.find(i[1]) != m_varToArg.end()) {
@@ -115,7 +113,7 @@ int KParser::_func(int begin, int end,  BlockInfo bi) {
     m_il.insert(m_il.end(), m_codes.begin(), m_codes.end());
     return i;
 }
-int KParser::_parameters(int begin, int end,  BlockInfo bi) {
+int KParser::_parameters(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0;
     if (m_tokens[i].tokenType != TokenType::lparen) {
@@ -162,7 +160,7 @@ int KParser::_parameters(int begin, int end,  BlockInfo bi) {
     i++;
     return i;
 }
-int KParser::_block(int begin, int end,  BlockInfo bi) {
+int KParser::_block(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     if(m_tokens[i].tokenType != TokenType::lbracket) {
@@ -174,7 +172,7 @@ int KParser::_block(int begin, int end,  BlockInfo bi) {
             i++;
             break;
         }
-        t = _statement(i, end, bi);
+        t = _statement(i, bi);
         if (t < 0) {
             char buf[256];
             sprintf(buf, "line[%d]: 문장이 아닙니다.\n", m_tokens[i].line);
@@ -185,7 +183,7 @@ int KParser::_block(int begin, int end,  BlockInfo bi) {
     }
     return i; 
 }
-int KParser::_var(int begin, int end,  BlockInfo bi) {
+int KParser::_var(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0;
 
@@ -211,27 +209,26 @@ int KParser::_var(int begin, int end,  BlockInfo bi) {
     i++;
     return i;
 }
-int KParser::_statement(int begin, int end,  BlockInfo bi) {
-    // sleep(1);
+int KParser::_statement(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0;
-    if((t = _if(i, end, bi)) >= 0) {
+    if((t = _if(i, bi)) >= 0) {
         i = t;
-    } else if((t = _while(i, end, bi)) >= 0) {
+    } else if((t = _while(i, bi)) >= 0) {
         i = t;
-    }else if((t = _assign(i, end, bi)) >= 0) {
+    }else if((t = _assign(i, bi)) >= 0) {
         i = t;
-    } else if((t = _decassign(i, end, bi)) >= 0) {
+    } else if((t = _decassign(i, bi)) >= 0) {
         i = t;
-    } else if((t = _block(i, end, bi)) >= 0) {
+    } else if((t = _block(i, bi)) >= 0) {
         i = t;
-    } else if((t = _break(i, end, bi)) >= 0) {
+    } else if((t = _break(i, bi)) >= 0) {
         i = t;
-    } else if((t = _continue(i, end, bi)) >= 0) {
+    } else if((t = _continue(i, bi)) >= 0) {
         i = t;
-    }else if((t = _simple_expr(i, end, bi)) >= 0) {
+    }else if((t = _simple_expr(i, bi)) >= 0) {
         i = t;
-    } else if((t = _return(i, end, bi)) >= 0) {
+    } else if((t = _return(i, bi)) >= 0) {
         i = t;
     } else {
         return -1;
@@ -239,7 +236,7 @@ int KParser::_statement(int begin, int end,  BlockInfo bi) {
     return i;
 }
 
-int KParser::_call(int begin, int end,  BlockInfo bi) {
+int KParser::_call(int begin,  BlockInfo bi) {
     // some();
     // some(a);
     // some(a,b,c);
@@ -251,7 +248,6 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
         m_tokens[i + 1].tokenType == TokenType::lparen && 
         m_tokens[i + 2].tokenType == TokenType::rparen
         ) {
-        // bi.addCode("call " + m_tokens[i].str + " " + std::to_string( m_funcToParams[m_tokens[i].str]));
         addCode("call", m_tokens[i].str,  std::to_string( m_funcToParams[m_tokens[i].str]));
         return i + 3;
     }
@@ -261,7 +257,7 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
         m_tokens[i + 1].tokenType == TokenType::lparen) {
         i = i + 2;
         // 이 까지 왔으면 매개변수가 하나이상 있는 것이다.
-        t = _expr(i, end, bi);
+        t = _expr(i, bi);
         if (t < 0) {
             addErrorString(i, "함수 인자에는 표현식이 와야합니다.");
             return -1;
@@ -276,7 +272,7 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
                 break;
             }
             tryI++;
-            t = _expr(tryI, end, bi);
+            t = _expr(tryI, bi);
             if (t < 0) {
                 addErrorString(i, ", 뒤에 표현식을 기대했습니다.");
                 return -1; 
@@ -289,13 +285,6 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
             return -1;
         }
         i++;
-        // if (m_tokens[i].tokenType != TokenType::semicolon) {
-        //     char buf[256];
-        //     sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line);
-        //     m_errorMsgs.push_back(buf);
-        //     return -1;
-        // }
-        // i++;
         addCode("call", m_tokens[begin].str,  std::to_string( m_funcToParams[m_tokens[begin].str]));
         return i;
     }
@@ -303,7 +292,7 @@ int KParser::_call(int begin, int end,  BlockInfo bi) {
     return -1; 
 }
 
-int KParser::_return(int begin, int end,  BlockInfo bi) {
+int KParser::_return(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0;
 
@@ -312,7 +301,7 @@ int KParser::_return(int begin, int end,  BlockInfo bi) {
     }
     i++;
 
-    if ((t = _expr(i, end, bi)) < 0) {
+    if ((t = _expr(i, bi)) < 0) {
         addErrorString(i, "표현식이 와야합니다.");
         return -1;
     } 
@@ -326,15 +315,15 @@ int KParser::_return(int begin, int end,  BlockInfo bi) {
     return i;
 }
 
-int KParser::_expr(int begin, int end,  BlockInfo bi) {
-    return _adv_expr(begin, end, bi);
+int KParser::_expr(int begin,  BlockInfo bi) {
+    return _adv_expr(begin, bi);
 }
 
-int KParser::_simple_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_simple_expr(int begin,  BlockInfo bi) {
     // <expr>;
     int i = begin;
     int t = 0;
-    if ((t = _expr(i, end, bi)) < 0) {
+    if ((t = _expr(i, bi)) < 0) {
         return -1;
     }
     i = t;
@@ -347,15 +336,15 @@ int KParser::_simple_expr(int begin, int end,  BlockInfo bi) {
     addCode("pop", "", ""); 
     return i;
 }
-int KParser::_adv_expr(int begin, int end,  BlockInfo bi) {
-    return _or_expr(begin, end, bi);
+int KParser::_adv_expr(int begin,  BlockInfo bi) {
+    return _or_expr(begin, bi);
 }
 
-int KParser::_or_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_or_expr(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     std::string leftValue = m_tokens[i].str;
-    t = _and_expr(i, end, bi);
+    t = _and_expr(i, bi);
     if (t < 0) {
         return -1;
     }
@@ -368,25 +357,21 @@ int KParser::_or_expr(int begin, int end,  BlockInfo bi) {
             break;
         }
         tryI++;
-        t = _and_expr(tryI, end, bi);
+        t = _and_expr(tryI, bi);
         if (t < 0) {
             break;
         }
-    // printf("rrrrrrrrrrqweqwe\n");
-    // exit(-1);
-        // bi.addCode(leftValue);
-        // bi.addCode(rightValue);
         addCode("or", "", "");
         i = t; 
     } 
     return i;
 }
 
-int KParser::_and_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_and_expr(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     std::string leftValue = m_tokens[i].str;
-    t = _cmp_expr(i, end, bi);
+    t = _cmp_expr(i, bi);
     if (t < 0) {
         return -1;
     }
@@ -399,7 +384,7 @@ int KParser::_and_expr(int begin, int end,  BlockInfo bi) {
             break;
         }
         tryI++;
-        t = _cmp_expr(tryI, end, bi);
+        t = _cmp_expr(tryI, bi);
         if (t < 0) {
             break;
         }
@@ -411,11 +396,11 @@ int KParser::_and_expr(int begin, int end,  BlockInfo bi) {
     return i;
 }
 
-int KParser::_cmp_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_cmp_expr(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     std::string leftValue = m_tokens[i].str;
-    t = _add_expr(i, end, bi);
+    t = _add_expr(i, bi);
     if (t < 0) {
         return -1;
     }
@@ -435,7 +420,7 @@ int KParser::_cmp_expr(int begin, int end,  BlockInfo bi) {
         }
         tryI++;
         std::string rightValue = m_tokens[tryI].str;
-        t = _add_expr(tryI, end, bi);
+        t = _add_expr(tryI, bi);
         if (t < 0) {
             break;
         }
@@ -460,11 +445,11 @@ int KParser::_cmp_expr(int begin, int end,  BlockInfo bi) {
     } while(0);
     return i;
 }
-int KParser::_add_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_add_expr(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     std::string leftValue = m_tokens[i].str;
-    t = _mul_expr(i, end, bi);
+    t = _mul_expr(i, bi);
     if (t < 0) {
         return -1;
     }
@@ -477,12 +462,10 @@ int KParser::_add_expr(int begin, int end,  BlockInfo bi) {
         }
         tryI++;
         std::string rightValue = m_tokens[tryI].str;
-        t = _mul_expr(tryI, end, bi);
+        t = _mul_expr(tryI, bi);
         if (t < 0) {
             break;
         }
-        // bi.addCode(leftValue);
-        // bi.addCode(rightValue);
         if(tokenValue == TokenType::plus) {
             addCode("add", "", "");
         } else if(tokenValue == TokenType::minus) {
@@ -492,11 +475,11 @@ int KParser::_add_expr(int begin, int end,  BlockInfo bi) {
     } 
     return i;
 }
-int KParser::_mul_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_mul_expr(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     std::string leftValue = m_tokens[i].str;
-    t = _sign_expr(i, end, bi);
+    t = _sign_expr(i, bi);
     if (t < 0) {
         return -1;
     }
@@ -504,18 +487,16 @@ int KParser::_mul_expr(int begin, int end,  BlockInfo bi) {
     while (1) {
         int tryI = i;
         auto tokenValue = m_tokens[tryI].tokenType;
-        t = _mul_op(tryI, end, bi);
+        t = _mul_op(tryI, bi);
         if(t < 0) {
             break;
         }
         tryI++;
         std::string rightValue = m_tokens[tryI].str;
-        t = _sign_expr(tryI, end, bi);
+        t = _sign_expr(tryI, bi);
         if (t < 0) {
             break;
         }
-        // bi.addCode(leftValue);
-        // bi.addCode(rightValue);
         if(tokenValue == TokenType::mult) {
             addCode("mult", "", "");
         } else if(tokenValue == TokenType::devide) {
@@ -529,7 +510,7 @@ int KParser::_mul_expr(int begin, int end,  BlockInfo bi) {
     return i;
 }
 
-int KParser::_mul_op(int begin, int end,  BlockInfo bi) {
+int KParser::_mul_op(int begin,  BlockInfo bi) {
     int i = begin;
     if (m_tokens[i].tokenType != TokenType::mult && m_tokens[i].tokenType != TokenType::devide && 
         m_tokens[i].tokenType != TokenType::modular) {
@@ -538,14 +519,14 @@ int KParser::_mul_op(int begin, int end,  BlockInfo bi) {
     i++;
     return i;
 }
-int KParser::_sign_expr(int begin, int end,  BlockInfo bi) {
+int KParser::_sign_expr(int begin,  BlockInfo bi) {
     int i = begin;
     bool isMinus = false;
     if(m_tokens[i].tokenType == TokenType::minus) {
         isMinus = true;
         i++;
     } 
-    int t = _factor_expr(i, end, bi);
+    int t = _factor_expr(i, bi);
     if(t < 0) {
         return -1;
     }
@@ -554,12 +535,13 @@ int KParser::_sign_expr(int begin, int end,  BlockInfo bi) {
     }
     return t;
 }
-int KParser::_factor_expr(int begin, int end,  BlockInfo bi) {
+
+int KParser::_factor_expr(int begin,  BlockInfo bi) {
     int i = begin;
     TokenType tokenType = m_tokens[i].tokenType;
     int t = 0;
 
-    if((t = _call(i, end, bi)) >= 0) {
+    if((t = _call(i, bi)) >= 0) {
         i = t;
     } else if(tokenType == TokenType::id) {
         addCode("push", m_tokens[i].str, "");
@@ -570,7 +552,7 @@ int KParser::_factor_expr(int begin, int end,  BlockInfo bi) {
     } else if(tokenType == TokenType::lparen) {
         int tryI = i;
         tryI++;
-        int t = _expr(tryI, end, bi);
+        int t = _expr(tryI, bi);
         if(t < 0) {
             addErrorString(i, "표현식의 오류.");
             return -1;
@@ -589,9 +571,7 @@ int KParser::_factor_expr(int begin, int end,  BlockInfo bi) {
 }
 
 
-int KParser::_if(int begin, int end,  BlockInfo bi) {
-    std::string sLabel = "LABEL" + std::to_string(rand() % 1000);
-    std::string eLabel = "LABEL" + std::to_string(rand() % 1000);
+int KParser::_if(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0;
     if( m_tokens[i].tokenType != TokenType::_if ) {
@@ -599,14 +579,15 @@ int KParser::_if(int begin, int end,  BlockInfo bi) {
     }
     i++;
 
-    if((t = _expr(i, end, bi)) < 0) {
+    if((t = _expr(i, bi)) < 0) {
         return -1;
     } else {
         i = t;
     } 
+    std::string eLabel = "LABEL" + std::to_string(m_labelNumber++);
 
     addCode("jz", eLabel, "");
-    if((t = _block(i, end, bi)) < 0) {
+    if((t = _block(i, bi)) < 0) {
         return -1;
     } else {
         i = t;
@@ -614,20 +595,21 @@ int KParser::_if(int begin, int end,  BlockInfo bi) {
     addCode("label", eLabel, "");
     return i;
 }
-int KParser::_while(int begin, int end,  BlockInfo bi) {
+
+int KParser::_while(int begin,  BlockInfo bi) {
     int i = begin;
     int t = 0;
 
-    std::string sLabel = "LABEL" + std::to_string(rand() % 1000);
-    std::string eLabel = "LABEL" + std::to_string(rand() % 1000);
-    bi.sLabel = sLabel;
-    bi.eLabel = eLabel;
     if( m_tokens[i].tokenType != TokenType::_while ) {
         return -1;
     }
     i++; 
+    std::string sLabel = "LABEL" + std::to_string(m_labelNumber++);
+    std::string eLabel = "LABEL" + std::to_string(m_labelNumber++);
+    bi.sLabel = sLabel;
+    bi.eLabel = eLabel;
     addCode("label", sLabel, "");
-    if((t = _expr(i, end, bi)) < 0) {
+    if((t = _expr(i, bi)) < 0) {
         return -1;
     } else {
         i = t;
@@ -635,7 +617,7 @@ int KParser::_while(int begin, int end,  BlockInfo bi) {
     addCode("jz", eLabel, "");
 
 
-    if((t = _block(i, end, bi)) < 0) {
+    if((t = _block(i, bi)) < 0) {
         return -1;
     } else {
         i = t;
@@ -644,7 +626,7 @@ int KParser::_while(int begin, int end,  BlockInfo bi) {
     addCode("label", eLabel, "");
     return i;
 }
-int KParser::_break(int begin, int end,  BlockInfo bi) {
+int KParser::_break(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
 
@@ -660,7 +642,7 @@ int KParser::_break(int begin, int end,  BlockInfo bi) {
     return i;
 }
 
-int KParser::_continue(int begin, int end,  BlockInfo bi) {
+int KParser::_continue(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
 
@@ -676,7 +658,7 @@ int KParser::_continue(int begin, int end,  BlockInfo bi) {
     return i;
 }
 
-int KParser::_assign(int begin, int end,  BlockInfo bi) {
+int KParser::_assign(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     int idIndex = i;
@@ -690,10 +672,10 @@ int KParser::_assign(int begin, int end,  BlockInfo bi) {
     i++; 
 
     int exprIndex = i;
-    t = _expr(i, end, bi);
+    t = _expr(i, bi);
     if (t < 0) {
         char buf[256];
-        sprintf(buf, "line[%d]: 표현식의 오류\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        sprintf(buf, "line[%d]: 표현식의 오류\n", m_tokens[i].line); 
         m_errorMsgs.push_back(buf);
         return -1;
     } 
@@ -701,7 +683,7 @@ int KParser::_assign(int begin, int end,  BlockInfo bi) {
 
     if (m_tokens[i].tokenType != TokenType::semicolon) {
         char buf[256];
-        sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        sprintf(buf, "line[%d]: ; 가 빠졌습니다.\n", m_tokens[i].line); 
         m_errorMsgs.push_back(buf);
         return -1;
     }
@@ -710,7 +692,7 @@ int KParser::_assign(int begin, int end,  BlockInfo bi) {
     return i;
 } 
 
-int KParser::_decassign(int begin, int end,  BlockInfo bi) {
+int KParser::_decassign(int begin,  BlockInfo bi) {
     int i = begin;
     int t;
     int idIndex = i;
@@ -724,10 +706,10 @@ int KParser::_decassign(int begin, int end,  BlockInfo bi) {
     i++; 
 
     int exprIndex = i;
-    t = _expr(i, end, bi);
+    t = _expr(i, bi);
     if (t < 0) {
         char buf[256];
-        sprintf(buf, "line[%d]: decassign 표현식의 오류\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        sprintf(buf, "line[%d]: decassign 표현식의 오류\n", m_tokens[i].line); 
         m_errorMsgs.push_back(buf);
         return -1;
     } 
@@ -735,7 +717,7 @@ int KParser::_decassign(int begin, int end,  BlockInfo bi) {
 
     if (m_tokens[i].tokenType != TokenType::semicolon) {
         char buf[256];
-        sprintf(buf, "line[%d]: _decassign ; 가 빠졌습니다.\n", m_tokens[i].line); // 대입문을 기대했습니다.\n");
+        sprintf(buf, "line[%d]: _decassign ; 가 빠졌습니다.\n", m_tokens[i].line); 
         m_errorMsgs.push_back(buf);
         return -1;
     }

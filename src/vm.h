@@ -11,10 +11,9 @@ class Vm {
         std::vector<int> m_stack; 
         std::map<std::string, int> m_labelToEip;
         std::map<std::string, int> m_funcToEip;
-        std::map<std::string, int> m_funcToLocals;
         int m_eip = 0;
-        int m_argPointer = 78;
-        int m_localPointer = 77;
+        int m_argPointer = 0;
+        int m_localPointer = 0;
         int m_stackPointer = 0;
 
         int getStackTop() {
@@ -34,38 +33,9 @@ class Vm {
             ret.push_back(s);
             return ret;
         }
-        void loadProgram(std::string prg) {
-            auto i = split(prg, "\n");
-            int eip = 0;
-            for(auto j: i) {
-                auto k = split(j, " ");
-                if (k[0] == "func") {
-                    m_funcToEip[k[1]] = eip;
-                    m_funcToLocals[k[1]] = std::stoi(k[2]); 
-                } else if(k[0] == "label") {
-                    m_labelToEip[k[1]] = eip;
-                }
-                m_program.push_back(k);
-                eip++;
-            }
-            m_program.push_back({"call", "main", "0"});
-            eip++;
-            int line = 0;
-            for(auto i: m_program) {
-                std::cout << line << " ";
-                for(auto j: i) {
-                    std::cout << j << " ";
-                }
-                std::cout << std::endl;
-                line++;
-            }
-            m_eip = eip - 1;
-            std::cout << "entry point: " << m_eip << std::endl;
-        }
         void addCommand(std::vector<std::string> k) {
             if (k[0] == "func") {
                 m_funcToEip[k[1]] = m_program.size();
-                m_funcToLocals[k[1]] = std::stoi(k[2]); 
             } else if(k[0] == "label") {
                 m_labelToEip[k[1]] = m_program.size();
             }
@@ -248,7 +218,7 @@ class Vm {
                     if(fn == "print") {
                         int t = *m_stack.rbegin();
                         // m_stack.pop_back(); 
-                        std::cout << t << "built-in-function\n";
+                        std::cout << t << "\n"; //  << "built-in-function\n";
                         m_eip++;
                     } else {
                         int argNumber = std::stoi(m_program[m_eip][2]);
